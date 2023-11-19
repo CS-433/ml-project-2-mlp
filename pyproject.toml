@@ -1,0 +1,32 @@
+[tool.poetry]
+authors = [
+    "Mika Senghaas <mika.senghaas@epfl.ch>",
+    "Ludek Cizinsky <ludek.cizinsky@epfl.ch>",
+    "Peter Nutter <peter.nutter@epfl.ch>",
+]
+name = "ml-project-2-mlp"
+version = "0.1.0"
+description = "Enhancing Homepage Topic Classification via LLM-augmented Datasets"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.13"
+torch = "^2.1.1"
+numpy = "^1.26.2"
+matplotlib = "^3.8.2"
+seaborn = "^0.13.0"
+wandb = "^0.16.0"
+black = { extras = ["jupyter"], version = "^23.11.0" }
+ruff = "^0.1.6"
+ipykernel = "^6.26.0"
+pytest = "^7.4.3"
+setuptools = "^68.2.2"
+toml = "^0.10.2"
+
+[tool.poetry.scripts]
+train = 'scripts.train:main'
+eval = 'scripts.eval:main'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
