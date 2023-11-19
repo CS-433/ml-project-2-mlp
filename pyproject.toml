@@ -23,6 +23,8 @@ pytest = "^7.4.3"
 setuptools = "^68.2.2"
 toml = "^0.10.2"
 pre-commit = "^3.5.0"
+homepage2vec = "^0.0.3rc1"
+isort = "^5.12.0"
 
 [tool.poetry.scripts]
 train = 'scripts.train:main'
