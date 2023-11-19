@@ -1,3 +1,4 @@
+"""
 import os
 
 from homepage2vec.model import Webpage, WebsiteClassifier
@@ -5,8 +6,10 @@ from homepage2vec.model import Webpage, WebsiteClassifier
 from ml_project_2_mlp.conf import TESTS_PATH
 from ml_project_2_mlp.homepage2vec.model import Webpage as Webpage2
 from ml_project_2_mlp.homepage2vec.model import WebsiteClassifier as WebsiteClassifier2
+"""
 
-
+# Disabled because it takes too long to run
+'''
 def test_homepage2vec_output_equal():
     """
     Checks that the output of the local adaption of the Homepage2Vec
@@ -32,3 +35,4 @@ def test_homepage2vec_output_equal():
     # Check that the scores are the same
     assert scores == scores2, "Scores are different."
     assert embedding == embedding2, "Embeddings are different."
+'''

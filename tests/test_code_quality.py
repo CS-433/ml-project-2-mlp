@@ -1,11 +1,11 @@
-import pathlib
-
 import pytest
 
-import ml_project_2_mlp.utils as utils
+import ml_project_2_mlp
 
-MODULES = [utils]
-FUNCTIONS = [utils.check_import]
+from .utils import get_all_python_files, get_modules_and_functions
+
+MODULES, FUNCTIONS = get_modules_and_functions(ml_project_2_mlp)
+PYTHON_FILES = get_all_python_files(ml_project_2_mlp.conf.ROOT_PATH)
 
 
 @pytest.mark.parametrize("module", MODULES)
@@ -16,29 +16,27 @@ def test_check_module_docstring(module):
     assert module.__doc__, f"Module {module.__name__} has no docstring."
 
 
-@pytest.mark.parametrize("fn", FUNCTIONS)
-def test_check_function_docstring(fn):
+@pytest.mark.parametrize("function", FUNCTIONS)
+def test_check_function_docstring(function):
     """
     Tests that all functions have docstrings.
     """
-    assert fn.__doc__, f"Function {fn.__name__} has no docstring."
+    assert function.__doc__, f"Function {function.__name__} has no docstring."
 
 
-def test_black_format():
+@pytest.mark.parametrize("python_file", PYTHON_FILES)
+def test_black_format(python_file):
     """
     Tests that all Python files are formatted with black.
     """
-    root_path = pathlib.Path(__file__).parent.parent
-    python_files = list(root_path.glob("**/*.py"))
-    for python_file in python_files:
-        content = python_file.read_text()
-        try:
-            import black
-        except ModuleNotFoundError:
-            assert False, "Please install black to check the formatting of your code."
+    content = python_file.read_text()
+    try:
+        import black
+    except ModuleNotFoundError:
+        assert False, "Please install black to check the formatting of your code."
 
-        try:
-            black.format_file_contents(content, fast=True, mode=black.FileMode())
-            raise ValueError(f"{python_file.name} not formatted.")
-        except black.NothingChanged:
-            pass
+    try:
+        black.format_file_contents(content, fast=True, mode=black.FileMode())
+        raise ValueError(f"{python_file.name} not formatted.")
+    except black.NothingChanged:
+        pass

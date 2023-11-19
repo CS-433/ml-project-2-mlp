@@ -143,6 +143,7 @@ class TextualExtractor:
 
 
 def embed_text(soup, transformer, k_sentences):
+    """Embed the text of a webpage""" ""
     sentences = split_in_sentences(soup)[:k_sentences]
 
     if len(sentences) == 0:
@@ -164,6 +165,7 @@ def embed_text(soup, transformer, k_sentences):
 
 
 def embed_description(soup, transformer):
+    """Embed the description of a webpage""" ""
     desc = soup.find("meta", attrs={"name": ["description", "Description"]})
 
     if not desc:
@@ -187,6 +189,7 @@ def embed_description(soup, transformer):
 
 
 def embed_keywords(soup, transformer):
+    """Embed the keywords of a webpage""" ""
     kw = soup.find("meta", attrs={"name": "keywords"})
 
     if not kw:
@@ -208,6 +211,7 @@ def embed_keywords(soup, transformer):
 
 
 def embed_title(soup, transformer):
+    """Embed the title of a webpage""" ""
     title = soup.find("title")
 
     if title is None:
@@ -230,6 +234,7 @@ def embed_title(soup, transformer):
 
 
 def embed_links(soup, transformer, k_links):
+    """Embed the links of a webpage""" ""
     a_tags = soup.find_all("a", href=True)
 
     links = [a.get("href", "") for a in a_tags]
@@ -261,6 +266,7 @@ def embed_links(soup, transformer, k_links):
 
 
 def embed_url(url, transformer):
+    """Embed the url of a webpage"""
     cleaned_url = clean_url(url)
 
     url_emb = transformer.encode(cleaned_url)
@@ -272,6 +278,7 @@ def embed_url(url, transformer):
 
 
 def embed_tld(url, rep_tld):
+    """Embed the top-level domain of a webpage"""
     tld = url.split(".")[-1]
     rep_onehot = [int(tld.startswith(d)) for d in rep_tld]
     continent_onehot = 7 * [0]  # TODO
@@ -280,6 +287,7 @@ def embed_tld(url, rep_tld):
 
 
 def embed_metatags(soup, rep_metatags):
+    """Embed the metatags of a webpage"""
     metatags = soup.findAll("meta")
     attr = [m.get("name", None) for m in metatags]
     attr = [a.lower() for a in attr if a is not None]
@@ -302,16 +310,19 @@ def split_in_sentences(soup):
 
 
 def clean_url(url):
+    """Clean the url of a webpage"""
     url = re.sub(r"www.|http://|https://|-|_", "", url)
     return url.split(".")[:-1]
 
 
 def clean_field(field):
+    """Clean a field of a webpage"""
     field = re.sub(r"\*|\n|\r|\t|\||:|-|–", "", field)
     return field.strip()
 
 
 def clean_link(link):
+    """Clean a link of a webpage"""
     link = re.sub(r"www.|http://|https://|[0-9]+", "", link)
     link = re.sub(r"-|_|=|\?|:", " ", link)
     link = link.split("/")[1:]

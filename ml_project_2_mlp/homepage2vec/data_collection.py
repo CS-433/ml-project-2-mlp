@@ -14,6 +14,8 @@ import requests
 
 
 class TimeoutException(Exception):
+    """Exception to be raised when a timeout occurs"""
+
     pass
 
 
