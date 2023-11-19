@@ -22,6 +22,7 @@ ipykernel = "^6.26.0"
 pytest = "^7.4.3"
 setuptools = "^68.2.2"
 toml = "^0.10.2"
+pre-commit = "^3.5.0"
 
 [tool.poetry.scripts]
 train = 'scripts.train:main'
