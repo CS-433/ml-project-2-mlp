@@ -1,7 +1,28 @@
+"""
+Module to extract textual features from the html content of a webpage.
+
+Includes:
+    - TextualExtractor: Class to extract textual features from the html content of a webpage.
+    - embed_text: Function to embed the text of a webpage.
+    - embed_description: Function to embed the description of a webpage.
+    - embed_keywords: Function to embed the keywords of a webpage.
+    - embed_title: Function to embed the title of a webpage.
+    - embed_links: Function to embed the links of a webpage.
+    - embed_url: Function to embed the url of a webpage.
+    - embed_tld: Function to embed the top-level domain of a webpage.
+    - embed_metatags: Function to embed the metatags of a webpage.
+    - split_in_sentences: Function to split the text of a webpage in sentences.
+    - clean_url: Function to clean the url of a webpage.
+    - clean_field: Function to clean a field of a webpage.
+    - clean_link: Function to clean a link of a webpage.
+    - trunc: Function to truncate the output of a tokenizer to a given length.
+"""
+
 import re
+from collections import Counter
+
 from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
-from collections import Counter
 
 
 class TextualExtractor:
@@ -242,10 +263,6 @@ def embed_links(soup, transformer, k_links):
 def embed_url(url, transformer):
     cleaned_url = clean_url(url)
 
-    # this is needed to avoid some warnings
-    url_trunc = [
-        trunc(w, transformer.tokenizer, transformer.max_seq_length) for w in cleaned_url
-    ]
     url_emb = transformer.encode(cleaned_url)
 
     if url_emb.size == 0:
@@ -265,7 +282,7 @@ def embed_tld(url, rep_tld):
 def embed_metatags(soup, rep_metatags):
     metatags = soup.findAll("meta")
     attr = [m.get("name", None) for m in metatags]
-    attr = [a.lower() for a in attr if a != None]
+    attr = [a.lower() for a in attr if a is not None]
 
     attr_emb = [int(a in attr) for a in rep_metatags]
 

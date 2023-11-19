@@ -1,18 +1,16 @@
-import requests
-import time
-import os
-import signal
-from PIL import Image
-from contextlib import contextmanager
-from importlib.util import find_spec
+"""
+Module to access and load a webpage to be used by the homepage2vec model.
 
-# import selenium if exists
-selenium_module = find_spec("selenium")
-if selenium_module is None:
-    pass
-else:
-    from selenium import webdriver
-    from selenium.common.exceptions import WebDriverException
+Includes:
+    - TimeoutException: Exception to be raised when a timeout occurs.
+    - time_limit: Context manager to set a time limit on the execution of a block.
+    - access_website: Function to access a website and return its response.
+"""
+
+import signal
+from contextlib import contextmanager
+
+import requests
 
 
 class TimeoutException(Exception):
@@ -63,78 +61,5 @@ def access_website(url, timeout=10):
             content_type = r_get.headers.get("content-type", "?").strip()
             return text, get_code, content_type
 
-    except Exception as e:
+    except Exception as _:
         return None
-
-
-def take_screenshot(
-    url, out_path, in_width=1920, in_height=1080, down_factor=3, quality=85, timeout=30
-):
-    """
-    Take a screenshot of a website and save it under the outpath
-    """
-
-    out_width = int(in_width / down_factor)
-    out_height = int(in_height / down_factor)
-
-    try:
-        # driver
-        options = webdriver.ChromeOptions()
-        options.headless = True
-
-        driver = webdriver.Chrome("chromedriver", options=options)
-
-        driver.set_page_load_timeout(timeout)
-        driver.set_window_size(in_width, in_height)
-
-        # access the url
-        if not url.startswith("http://") and not url.startswith("https:"):
-            url = "http://" + url
-        driver.get(url)
-
-        # set the opacity to 0 for elements that might be popup, etc...
-        try:
-            targets = [
-                "popup",
-                "modal",
-                "cookie",
-            ]  # the substrings in the div we want to hide
-            target_types = ["class", "id"]  # where the substrings are
-            js_script = ""
-            for tar in targets:
-                for ty in target_types:
-                    js_script += (
-                        "document.styleSheets[0].insertRule('div["
-                        + ty
-                        + "*="
-                        + tar
-                        + "] {opacity: 0 !important}', 0); \n"
-                    )
-
-            driver.execute_script(js_script)
-
-        # if can't access the css sheet
-        except WebDriverException as e:
-            pass
-
-        # so that the website's elements are loaded
-        time.sleep(2)
-
-        # takes a screenshot (only in png)
-        driver.save_screenshot(out_path + ".png")
-
-        # convert the png into a jpeg of lesser dimensions and quality
-        img = Image.open(out_path + ".png")
-        img = img.convert("RGB")
-        img = img.resize((out_width, out_height), Image.ANTIALIAS)
-        img.save(out_path + ".jpeg", optimize=True, quality=quality)
-        os.remove(out_path + ".png")
-        return out_path + ".jpeg"
-
-    except Exception as e:
-        print(e)
-        return
-
-    finally:
-        if "driver" in locals():
-            driver.quit()

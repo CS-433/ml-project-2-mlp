@@ -1,19 +1,25 @@
-import logging
+"""
+Module that defines the Homepage2vec model (consisting of a textual extractor and a classifier).
 
+Includes:
+    - WebsiteClassifier: Class to load and use the Homepage2vec model.
+    - SimpleClassifier: Class to define the architecture of the Homepage2vec model.
+    - Webpage: Class to define a webpage query.
+"""
+
+import json
+import os
+import tempfile
+import uuid
+
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-import numpy as np
-from .homepage2vec.model_loader import get_model_path
-from .homepage2vec.textual_extractor import TextualExtractor
-from .homepage2vec.visual_extractor import VisualExtractor
-from .homepage2vec.data_collection import access_website, take_screenshot
-import uuid
-import tempfile
-import os
-import glob
-import json
-from importlib.util import find_spec
+
+from ..homepage2vec.data_collection import access_website
+from ..homepage2vec.model_loader import get_model_path
+from ..homepage2vec.textual_extractor import TextualExtractor
 
 
 class WebsiteClassifier:
@@ -21,10 +27,8 @@ class WebsiteClassifier:
     Pretrained Homepage2vec model
     """
 
-    def __init__(
-        self, visual=False, device=None, cpu_threads_count=1, dataloader_workers=1
-    ):
-        self.input_dim = 5177 if visual else 4665
+    def __init__(self, device=None, cpu_threads_count=1, dataloader_workers=1):
+        self.input_dim = 4665
         self.output_dim = 14
         self.classes = [
             "Arts",
@@ -43,20 +47,9 @@ class WebsiteClassifier:
             "Sports",
         ]
 
-        if find_spec("selenium") is None and visual is True:
-            raise RuntimeError(
-                "Visual flag requires the installation of the selenium package"
-            )
-        self.with_visual = visual
-
-        self.model_home_path, self.model_path = get_model_path(visual)
+        self.model_home_path, self.model_path = get_model_path()
 
         self.temporary_dir = tempfile.gettempdir() + "/homepage2vec/"
-        os.makedirs(self.temporary_dir + "/screenshots", exist_ok=True)
-        # clean screen shorts
-        files = glob.glob(self.temporary_dir + "/screenshots/*")
-        for f in files:
-            os.remove(f)
 
         self.device = device
         self.dataloader_workers = dataloader_workers
@@ -78,9 +71,6 @@ class WebsiteClassifier:
         # features used in training
         self.features_order = []
         self.features_dim = {}
-        logging.debug(
-            "Loading features from {}".format(self.model_path + "/features.txt")
-        )
         with open(self.model_path + "/features.txt", "r") as file:
             for f in file:
                 name = f.split(" ")[0]
@@ -94,7 +84,6 @@ class WebsiteClassifier:
             return self.model.forward(x)
 
     def fetch_website(self, url):
-        logging.debug("Fetching website: {}".format(url))
         response = access_website(url)
         w = Webpage(url)
         if response is not None:
@@ -103,22 +92,13 @@ class WebsiteClassifier:
             if self.is_valid(get_code, content_type):
                 w.is_valid = True
                 w.html = html
-        if self.with_visual:
-            logging.debug("Generating screenshot: {}".format(url))
-            out_path = self.temporary_dir + "/screenshots/" + str(w.uid)
-            w.screenshot_path = take_screenshot(w.url, out_path)
-            logging.debug(
-                "Screenshot for {} ready in {}".format(url, w.screenshot_path)
-            )
+
         return w
 
     def get_features(self, url, html, screenshot_path):
         te = TextualExtractor(self.device)
         features = te.get_features(url, html)
-        if self.with_visual:
-            ve = VisualExtractor(self.device)
-            visual_features = ve.get_features(screenshot_path)
-            features["f_visual"] = visual_features
+
         return features
 
     def predict(self, website):
