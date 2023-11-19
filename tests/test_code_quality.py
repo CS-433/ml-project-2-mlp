@@ -1,5 +1,6 @@
-import pytest
 import pathlib
+
+import pytest
 
 import ml_project_2_mlp.utils as utils
 

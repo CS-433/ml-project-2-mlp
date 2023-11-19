@@ -1,6 +1,7 @@
-import sys
-import toml
 import importlib.metadata
+import sys
+
+import toml
 
 
 def test_check_python_version():
