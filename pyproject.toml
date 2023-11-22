@@ -18,13 +18,14 @@ seaborn = "^0.13.0"
 wandb = "^0.16.0"
 black = { extras = ["jupyter"], version = "^23.11.0" }
 ruff = "^0.1.6"
-ipykernel = "^6.26.0"
+ipykernel = "^6.27.0"
 pytest = "^7.4.3"
 setuptools = "^68.2.2"
 toml = "^0.10.2"
 pre-commit = "^3.5.0"
 homepage2vec = "^0.0.3rc1"
 isort = "^5.12.0"
+gdown = "^4.7.1"
 
 [tool.poetry.scripts]
 train = 'scripts.train:main'
