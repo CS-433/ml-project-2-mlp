@@ -1,0 +1,9 @@
+defaults:
+  - early_stopping
+  - rich_progress_bar
+  - _self_
+
+early_stopping:
+  monitor: "val/acc"
+  patience: 100
+  mode: "max"

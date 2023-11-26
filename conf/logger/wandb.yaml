@@ -1,0 +1,11 @@
+# https://wandb.ai
+
+wandb:
+  _target_: lightning.pytorch.loggers.wandb.WandbLogger
+  name: ${name}
+  entity: ml-project-2-mlp
+  project: homepage2vec
+  save_dir: "${paths.output_dir}"
+  offline: False
+  id: null # pass correct id to resume experiment!
+  tags: ${tags}

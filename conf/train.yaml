@@ -1,0 +1,19 @@
+# @package _global_
+
+# Default configurations (precendence in reverse order)
+defaults:
+  - _self_
+  - data: crowd
+  - model: homepage2vec
+  - trainer: mps
+  - callbacks: default
+  - paths: default
+  - logger: null
+
+# Experiment name
+name: ???
+task_name: train
+tags: ["dev"]
+train: True
+test: True
+seed: null

@@ -1,0 +1,17 @@
+# @package _global_
+
+# Default configurations (precendence in reverse order)
+defaults:
+  - _self_
+  - data: default
+  - model: mnist
+  - logger: null
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+
+# Experiment name
+name: ???
+task_name: eval
+tags: ["dev"]

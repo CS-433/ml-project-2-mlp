@@ -1,0 +1,5 @@
+defaults:
+  - default
+
+name: llm
+_target_: ml_project_2_mlp.data.LLMAugmentedData
