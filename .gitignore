@@ -3,6 +3,12 @@
 /data
 /models
 /outputs
+/artifacts
+/wandb
+/conf/local/*
+
+!.gitkeep
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
