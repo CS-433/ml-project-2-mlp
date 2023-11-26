@@ -1,7 +1,7 @@
 defaults:
   - default
 
-name: crowdsourced
+data_dir: ${paths.data_dir}/crowdsourced
 _target_: ml_project_2_mlp.data.CrowdSourcedDataModule
 
 urls:

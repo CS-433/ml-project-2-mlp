@@ -3,17 +3,24 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - _self_
-  - data: crowdsourced
+  - data: ???
   - model: homepage2vec
-  - trainer: cpu
-  - callbacks: default
-  - paths: default
   - logger: null
+  - callbacks: default
+  - trainer: default
+  - paths: default
+  - extras: default
+  - experiment: null
+  - optional local: default
 
-# Experiment name
-name: ???
+# Task name (determines output directory)
 task_name: train
-tags: ["dev"]
-train: True
+
+# List of tags (logged to W&B)
+tags: [dev]
+
+# Whether to also test the model on best performing model
 test: True
-seed: null
+
+# Random seed for reproducibility
+seed: 42

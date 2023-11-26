@@ -1,0 +1,17 @@
+# @package _global_
+
+# Run this experiment with:
+# poetry run train experiment=example
+
+defaults:
+  - override /data: crowdsourced
+  - override /logger: wandb
+
+# Experiment tags
+tags: ["crowdsourced"]
+
+# Hyperparameter search
+hydra:
+  sweeper:
+    params:
+      data.batch_size: 32,64

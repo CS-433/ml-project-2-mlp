@@ -1,7 +1,7 @@
 _target_: ???
-name: ???
-data_dir: ${paths.data_dir}
-data_split: [0.6, 0.2, 0.2]
+data_dir: ???
+data_split: [0.6, 0.2, 0.2] # Ratio of train-val-test split
 batch_size: 32 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
-num_workers: 0
-pin_memory: False
+num_workers: 1 # Number of processes used for data loaders
+pin_memory: False # Whether to move data on GPU
+seed: ${seed} # Use seed for data splits

@@ -2,14 +2,17 @@
 
 # Default configurations (precendence in reverse order)
 defaults:
-  - _self_
-  - data: crowdsourced
-  - model: mnist
-  - logger: null
+  - data: crowdsourced # Don't change!
+  - model: homepage2vec
+  - logger: wandb
   - trainer: default
   - paths: default
+  - global: default
+  - _self_
 
-# Experiment name
-name: ???
+# Specific for `eval.py`
+run: ??? # W&B Run ID
+version: best # Model version (Can be `latest`, `best` or specific version, e.g. `v0`)
+wandb_ckpt: ${logger.wandb.entity}/${logger.wandb.project}/model-${run}:${version}
 task_name: eval
 tags: ["dev"]
