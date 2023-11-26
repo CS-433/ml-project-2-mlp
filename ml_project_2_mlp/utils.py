@@ -3,7 +3,6 @@ Module containing utility functions.
 
 Functions:
     check_import: Checks if the module can be imported.
-    seed_everything: Sets all seeds
     load_curlie_data: Loads the original processed Curlie data that was used
     load_crowdsourced_data: Loads the crowdsourced data from the data directory.
     load_homepage2vec: Loads the pre-trained Homepage2Vec from the model directory.
@@ -13,19 +12,21 @@ import gzip
 import json
 import logging
 import os
-import random
 import shutil
+import warnings
 import zipfile
-from typing import List
+from typing import List, Sequence
 
 import gdown
 import hydra
-import numpy as np
 import pandas as pd
+import rich
+import rich.syntax
+import rich.tree
 import torch
 from lightning import Callback
 from lightning.pytorch.loggers import Logger
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 log = logging.Logger(__name__)
 
@@ -35,21 +36,135 @@ def check_import() -> bool:
     return True
 
 
-def seed_everything(seed: int):
-    """
-    Sets seed in random, numpy and torch
+def extras(cfg: DictConfig) -> None:
+    """Applies optional utilities before the task is started.
+
+    Utilities:
+        - Ignoring python warnings
+        - Rich config printing
 
     Args:
-        seed (int): Seed to use
-
-    Returns:
-        None
+        cfg: A DictConfig object containing the config tree.
     """
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.mps.manual_seed(seed)
+    # Return if no `extras` config
+    if not cfg.get("extras"):
+        log.warning("Extras config not found! <cfg.extras=null>")
+        return
+
+    # Disable python warnings
+    if cfg.extras.get("ignore_warnings"):
+        log.info("Disabling python warnings! <cfg.extras.ignore_warnings=True>")
+        warnings.filterwarnings("ignore")
+
+    # Print config with rich
+    if cfg.extras.get("print_config"):
+        log.info("Printing config tree with Rich! <cfg.extras.print_config=True>")
+        print_config_tree(cfg, resolve=True)
+
+
+def print_config_tree(
+    cfg: DictConfig,
+    print_order: Sequence[str] = (
+        "data",
+        "model",
+        "callbacks",
+        "logger",
+        "trainer",
+        "paths",
+        "extras",
+    ),
+    resolve: bool = False,
+    save_to_file: bool = False,
+) -> None:
+    """
+    Prints the contents of a DictConfig as a tree structure using the Rich library.
+
+    Args:
+        cfg: A DictConfig composed by Hydra.
+        print_order: Determines in what order config components are printed. Default is ``("data", "model",
+        "callbacks", "logger", "trainer", "paths", "extras")``.
+        resolve: Whether to resolve reference fields of DictConfig. Default is ``False``.
+    """
+    style = "dim"
+    tree = rich.tree.Tree("CONFIG", style=style, guide_style=style)
+
+    queue = []
+
+    # Add fields from `print_order` to queue
+    for field in print_order:
+        queue.append(field) if field in cfg else log.warning(
+            f"Field '{field}' not found in config. Skipping '{field}' config printing..."
+        )
+
+    # Add all the other fields to queue (not specified in `print_order`)
+    for field in cfg:
+        if field not in queue:
+            queue.append(field)
+
+    # Generate config tree from queue
+    for field in queue:
+        branch = tree.add(field, style=style, guide_style=style)
+
+        config_group = cfg[field]
+        if isinstance(config_group, DictConfig):
+            branch_content = OmegaConf.to_yaml(config_group, resolve=resolve)
+        else:
+            branch_content = str(config_group)
+
+        branch.add(rich.syntax.Syntax(branch_content, "yaml"))
+
+    # print config tree
+    rich.print(tree)
+
+
+def log_hyperparameters(setup_dict: dict) -> None:
+    """
+    Controls which config parts are saved by Lightning loggers.
+
+    Additionally saves:
+        - Number of model parameters (trainable, non-trainable, total)
+
+    Args:
+        setup_dict: A dictionary containing the following objects:
+        - `"cfg"`: A DictConfig object containing the main config.
+        - `"model"`: The Lightning model.
+        - `"trainer"`: The Lightning trainer.
+        - `"callbacks"`: A list of Lightning callbacks.
+        - `"extras"`: A list of extra objects to save.
+    """
+    hparams = {}
+
+    cfg = OmegaConf.to_container(setup_dict["cfg"])
+    model = setup_dict["model"]
+    trainer = setup_dict["trainer"]
+
+    if not trainer.logger:
+        log.warning("Logger not found! Skipping hyperparameter logging...")
+        return
+
+    # Save information on run
+    hparams["task_name"] = cfg.get("task_name")
+    hparams["tags"] = cfg.get("tags")
+    hparams["seed"] = cfg.get("seed")
+
+    # Save model, data, trainer and callback configs
+    hparams["model"] = cfg["model"]
+    hparams["data"] = cfg["data"]
+    hparams["trainer"] = cfg["trainer"]
+    hparams["callbacks"] = cfg.get("callbacks")
+
+    # Additionally: Save number of model parameters
+    hparams["model/params/total"] = sum(p.numel() for p in model.parameters())
+    hparams["model/params/trainable"] = sum(
+        p.numel() for p in model.parameters() if p.requires_grad
+    )
+    hparams["model/params/non_trainable"] = sum(
+        p.numel() for p in model.parameters() if not p.requires_grad
+    )
+
+    # Log hyperparameters in all loggers
+    for logger in trainer.loggers:
+        logger.log_hyperparams(hparams)
 
 
 def instantiate_callbacks(callbacks_cfg: DictConfig) -> List[Callback]:
