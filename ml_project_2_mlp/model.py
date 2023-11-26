@@ -3,14 +3,18 @@ Module containing the `LightningModule` for the Homepage2Vec model.
 """
 
 import os
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import torch
 from lightning import LightningModule
-from torchmetrics import MaxMetric, MeanMetric
+from torchmetrics import MaxMetric, MeanMetric, Metric
 from torchmetrics.classification import MultilabelAccuracy as Accuracy
+from torchmetrics.classification import MultilabelF1Score as F1
+from torchmetrics.classification import MultilabelPrecision as Precision
+from torchmetrics.classification import MultilabelRecall as Recall
 
 from .homepage2vec.model import SimpleClassifier, WebsiteClassifier
+from .metrics import LabelsPerPage
 
 
 class Homepage2VecModule(LightningModule):
@@ -22,6 +26,7 @@ class Homepage2VecModule(LightningModule):
         device: str,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
+        threshold: float,
     ) -> None:
         """Initialize a `Homepage2VecLitModule`.
 
@@ -38,50 +43,90 @@ class Homepage2VecModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         # Load website classifier (feature extractor)
-        self.website_clf = WebsiteClassifier(model_path=model_path)  # Feature extractor
+        self.website_clf = WebsiteClassifier(
+            model_path=self.hparams.model_path
+        )  # Feature extractor
         self.input_dim = self.website_clf.input_dim
         self.output_dim = self.website_clf.output_dim
 
         # Load pre-trained model (classification head)
-        weight_path = os.path.join(model_path, "model.pt")
-        model_tensor = torch.load(weight_path, map_location=device)
+        weight_path = os.path.join(self.hparams.model_path, "model.pt")
+        model_tensor = torch.load(weight_path, map_location=self.hparams.device)
         self.model = SimpleClassifier(
             input_dim=self.website_clf.input_dim, output_dim=self.website_clf.output_dim
         )
         self.model.load_state_dict(model_tensor)
 
-        # loss function
-        self.criterion = torch.nn.BCELoss()
+        # Loss function
+        self.criterion = torch.nn.BCEWithLogitsLoss()
 
-        # metric objects for calculating and averaging accuracy across batches
-        threshold = 0.5  # TODO: move this to hydra
+        # Setup Metrics
+        clf_metrics_kwargs = {
+            "num_labels": self.output_dim,
+            "threshold": self.hparams.threshold,
+            "average": "macro",
+        }
+        # - Training
+        self.train_metrics = [
+            ("acc", Accuracy, clf_metrics_kwargs),
+            ("loss", MeanMetric, None),
+        ]
+        self._set_metrics(self.train_metrics, "train")
 
-        self.train_acc = Accuracy(
-            threshold=threshold,
-            num_labels=self.output_dim,
-            average="micro",
-            validate_args=True,
-        )
-        self.val_acc = Accuracy(
-            threshold=threshold,
-            num_labels=self.output_dim,
-            average="micro",
-            validate_args=True,
-        )
-        self.test_acc = Accuracy(
-            threshold=threshold,
-            num_labels=self.output_dim,
-            average="micro",
-            validate_args=True,
-        )
+        # - Validation
+        self.val_metrics = [
+            ("acc", Accuracy, clf_metrics_kwargs),
+            ("loss", MeanMetric, None),
+        ]
+        self._set_metrics(self.val_metrics, "val")
 
-        # for averaging loss across batches
-        self.train_loss = MeanMetric()
-        self.val_loss = MeanMetric()
-        self.test_loss = MeanMetric()
+        # Testing metrics
+        self.test_metrics = [
+            ("acc", Accuracy, clf_metrics_kwargs),
+            ("f1", F1, clf_metrics_kwargs),
+            ("precision", Precision, clf_metrics_kwargs),
+            ("recall", Recall, clf_metrics_kwargs),
+            ("LPP", LabelsPerPage, None),
+            ("loss", MeanMetric, None),
+        ]
+        self._set_metrics(self.test_metrics, "test")
 
-        # for tracking best so far validation accuracy
+        # For tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
+
+    def _set_metrics(self, metrics: List[Tuple[str, Metric, str]], mode: str) -> None:
+        for name, metric_class, kwargs in metrics:
+            if kwargs is None:
+                setattr(self, f"{mode}_{name}", metric_class())
+            else:
+                setattr(self, f"{mode}_{name}", metric_class(**kwargs))
+
+    def _update_log_metrics(
+        self,
+        metrics: List[Tuple[str, Metric, str]],
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+        mode: str,
+    ):
+        loss = None
+        for name, _, _ in metrics:
+            # Update
+            if name != "loss":
+                getattr(self, f"{mode}_{name}")(logits, targets)
+            else:
+                loss = self.criterion(logits, targets.float())
+                getattr(self, f"{mode}_{name}")(loss)
+
+            # Log
+            self.log(
+                f"{mode}/{name}",
+                getattr(self, f"{mode}_{name}"),
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+            )
+
+        return loss
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -106,15 +151,19 @@ class Homepage2VecModule(LightningModule):
 
         Returns:
         A tuple containing (in order):
-            - A tensor of losses.
             - A tensor of predictions.
             - A tensor of target labels.
         """
+        # Parse batch
         x, y = batch
-        logits, _ = self.forward(x)  # Returns raw logits and embeddings
-        loss = self.criterion(torch.sigmoid(logits), y)
 
-        return loss, logits, y
+        # Returns raw logits and embeddings
+        logits, _ = self.forward(x)
+
+        # Cast labels from floats to longs for computing metrics
+        y = y.long()
+
+        return logits, y
 
     def training_step(
         self, batch: Tuple[torch.Tensor, torch.Tensor], _: int
@@ -129,17 +178,12 @@ class Homepage2VecModule(LightningModule):
         Returns:
             A tensor of losses between model predictions and targets.
         """
-        loss, preds, targets = self.model_step(batch)
+
+        # Forward pass
+        logits, targets = self.model_step(batch)
 
         # Update and log metrics
-        self.train_loss(loss)
-        self.train_acc(preds, targets)
-        self.log(
-            "train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True
-        )
-        self.log(
-            "train/acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True
-        )
+        loss = self._update_log_metrics(self.train_metrics, logits, targets, "train")
 
         # Return loss or backpropagation will fail
         return loss
@@ -155,13 +199,11 @@ class Homepage2VecModule(LightningModule):
         Returns:
             None
         """
-        loss, preds, targets = self.model_step(batch)
+        # Forward pass
+        logits, targets = self.model_step(batch)
 
-        # update and log metrics
-        self.val_loss(loss)
-        self.val_acc(preds, targets)
-        self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("val/acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
+        # Update and log metrics
+        self._update_log_metrics(self.val_metrics, logits, targets, "val")
 
     def on_validation_epoch_end(self) -> None:
         """
@@ -169,8 +211,6 @@ class Homepage2VecModule(LightningModule):
         """
         acc = self.val_acc.compute()  # get current val acc
         self.val_acc_best(acc)  # update best so far val acc
-        # log `val_acc_best` as a value through `.compute()` method, instead of as a metric object
-        # otherwise metric would be reset by lightning after each epoch
         self.log(
             "val/acc_best", self.val_acc_best.compute(), sync_dist=True, prog_bar=True
         )
@@ -184,15 +224,12 @@ class Homepage2VecModule(LightningModule):
             labels.
         :param batch_idx: The index of the current batch.
         """
-        loss, preds, targets = self.model_step(batch)
 
-        # update and log metrics
-        self.test_loss(loss)
-        self.test_acc(preds, targets)
-        self.log(
-            "test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True
-        )
-        self.log("test/acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
+        # Forward pass
+        logits, targets = self.model_step(batch)
+
+        # Update and log metrics
+        self._update_log_metrics(self.test_metrics, logits, targets, "test")
 
     def setup(self, stage: str) -> None:
         """
