@@ -4,6 +4,6 @@ defaults:
   - _self_
 
 early_stopping:
-  monitor: "val/acc"
+  monitor: "val/f1"
   patience: 100
   mode: "max"
