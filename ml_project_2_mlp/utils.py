@@ -3,6 +3,7 @@ Module containing utility functions.
 
 Functions:
     check_import: Checks if the module can be imported.
+    seed_everything: Sets all seeds
     load_curlie_data: Loads the original processed Curlie data that was used
     load_crowdsourced_data: Loads the crowdsourced data from the data directory.
     load_homepage2vec: Loads the pre-trained Homepage2Vec from the model directory.
@@ -10,23 +11,101 @@ Functions:
 
 import gzip
 import json
+import logging
 import os
+import random
 import shutil
 import zipfile
+from typing import List
 
 import gdown
+import hydra
+import numpy as np
 import pandas as pd
 import torch
+from lightning import Callback
+from lightning.pytorch.loggers import Logger
+from omegaconf import DictConfig
 
 from .conf import CROWDSOURCED_URL, CURLIE_URL, HOMEPAGE2VEC_URL
-from .log import get_logger
 
-log = get_logger(__name__)
+log = logging.Logger(__name__)
 
 
 def check_import() -> bool:
     """Checks if the module can be imported."""
     return True
+
+
+def seed_everything(seed: int):
+    """
+    Sets seed in random, numpy and torch
+
+    Args:
+        seed (int): Seed to use
+
+    Returns:
+        None
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.mps.manual_seed(seed)
+
+
+def instantiate_callbacks(callbacks_cfg: DictConfig) -> List[Callback]:
+    """
+    Instantiates callbacks for lightning.Trainer from Hydra configuration.
+
+    Args:
+        callback_cfg: Hydra configurations for callbacks
+
+    Returns:
+        A list of instantiated callbacks.
+    """
+    callbacks: List[Callback] = []
+
+    if not callbacks_cfg:
+        log.warning("No callback configs found! Skipping..")
+        return callbacks
+
+    if not isinstance(callbacks_cfg, DictConfig):
+        raise TypeError("Callbacks config must be a DictConfig!")
+
+    for _, cb_conf in callbacks_cfg.items():
+        if isinstance(cb_conf, DictConfig) and "_target_" in cb_conf:
+            log.info(f"Instantiating callback <{cb_conf._target_}>")
+            callbacks.append(hydra.utils.instantiate(cb_conf))
+
+    return callbacks
+
+
+def instantiate_loggers(logger_cfg: DictConfig) -> List[Logger]:
+    """
+    Instantiates loggers from config.
+
+    Args:
+        logger_cfg: A DictConfig object containing logger configurations.
+
+    Returns:
+        A list of instantiated loggers.
+    """
+    logger: List[Logger] = []
+
+    if not logger_cfg:
+        log.warning("No logger configs found! Skipping...")
+        return logger
+
+    if not isinstance(logger_cfg, DictConfig):
+        raise TypeError("Logger config must be a DictConfig!")
+
+    for _, lg_conf in logger_cfg.items():
+        if isinstance(lg_conf, DictConfig) and "_target_" in lg_conf:
+            log.info(f"Instantiating logger <{lg_conf._target_}>")
+            logger.append(hydra.utils.instantiate(lg_conf))
+
+    return logger
 
 
 def load_curlie_data(dir_path: str):
