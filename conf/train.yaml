@@ -5,7 +5,7 @@ defaults:
   - _self_
   - data: crowdsourced
   - model: homepage2vec
-  - trainer: mps
+  - trainer: cpu
   - callbacks: default
   - paths: default
   - logger: null
