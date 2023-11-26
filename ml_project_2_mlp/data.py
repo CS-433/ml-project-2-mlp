@@ -1,5 +1,4 @@
 import os
-from math import exp
 from typing import List, Tuple
 
 import torch
@@ -7,7 +6,6 @@ from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import transforms
 
-from .homepage2vec.model import WebsiteClassifier
 from .utils import download_if_not_present, load
 
 
@@ -38,13 +36,13 @@ class CrowdSourcedDataModule(LightningDataModule):
 
     def __init__(
         self,
-        name: str,
         data_dir: str,
         urls: dict[str, str],
         data_split: List[float] = [0.6, 0.2, 0.2],
         batch_size: int = 32,
         num_workers: int = 0,
         pin_memory: bool = False,
+        seed: int | None = None,
     ):
         super().__init__()
 
@@ -64,7 +62,7 @@ class CrowdSourcedDataModule(LightningDataModule):
         """
         # Load the embedded websites (download if necessary)
         download_if_not_present(
-            dir_path=os.path.join(self.hparams.data_dir, self.hparams.name, "embedded"),
+            dir_path=os.path.join(self.hparams.data_dir, "embedded"),
             gdrive_url=self.hparams.urls["embedded"],
             expected_files=["embeddings.pt", "labels.pt"],
         )
@@ -72,7 +70,7 @@ class CrowdSourcedDataModule(LightningDataModule):
     def setup(self, stage: str | None = None):
         # Load the embeddings and labels
         self.embeddings, self.labels = load(
-            dir_path=os.path.join(self.hparams.data_dir, self.hparams.name, "embedded"),
+            dir_path=os.path.join(self.hparams.data_dir, "embedded"),
             expected_files=["embeddings.pt", "labels.pt"],
         )
 
@@ -89,7 +87,7 @@ class CrowdSourcedDataModule(LightningDataModule):
         test_size = len(dataset) - train_size - val_size
 
         # Split the dataset
-        generator = torch.Generator().manual_seed(42)
+        generator = torch.Generator().manual_seed(self.hparams.seed)
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(
             dataset, [train_size, val_size, test_size], generator=generator
         )
@@ -101,6 +99,7 @@ class CrowdSourcedDataModule(LightningDataModule):
             shuffle=True,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
+            persistent_workers=True if self.hparams.num_workers > 0 else False,
         )
 
     def val_dataloader(self):
@@ -110,6 +109,7 @@ class CrowdSourcedDataModule(LightningDataModule):
             shuffle=False,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
+            persistent_workers=True if self.hparams.num_workers > 0 else False,
         )
 
     def test_dataloader(self):
@@ -119,4 +119,5 @@ class CrowdSourcedDataModule(LightningDataModule):
             shuffle=False,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
+            persistent_workers=True if self.hparams.num_workers > 0 else False,
         )
