@@ -2,19 +2,18 @@
 Script for training a model on a dataset.
 """
 
-import logging
-import warnings
-
-warnings.filterwarnings("ignore", ".*does not have many workers.*")
 from typing import List
 
 import hydra
+import lightning as L
 import rootutils
+import wandb
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 import ml_project_2_mlp.utils as utils
+from ml_project_2_mlp.logger import RankedLogger
 
 # Setup root environment
 root_path = rootutils.setup_root(__file__)
@@ -24,16 +23,18 @@ rootutils.set_root(
 )
 
 
-log = logging.Logger(__name__, level=logging.CRITICAL)
+# Setup ranked logger
+log = RankedLogger(__name__, rank_zero_only=True)
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="train")
 def main(cfg: DictConfig):
-    # Print experiment configuration
-    print(OmegaConf.to_yaml(cfg))
+    # Extras (e.g. ignore warnings, pretty print config, ...)
+    utils.extras(cfg)
+
     # Set all seeds
     if cfg.get("seed"):
-        utils.seed_everything(cfg.seed)
+        L.seed_everything(cfg.seed)
 
     # Instantiate data module
     log.info(f"Instantiating datamodule <{cfg.data._target_}>")
@@ -66,12 +67,14 @@ def main(cfg: DictConfig):
         "trainer": trainer,
     }
 
-    # Train model if specified
-    if cfg.get("train"):
-        log.info("Starting training!")
-        trainer.fit(model=model, datamodule=datamodule)
+    # Log hyperparameters if specified
+    if logger:
+        log.info("Logging hyperparameters!")
+        utils.log_hyperparameters(setup_dict)
 
-    train_metrics = trainer.callback_metrics
+    # Train model
+    log.info("Starting training!")
+    trainer.fit(model=model, datamodule=datamodule)
 
     # Test model if specified
     if cfg.get("test"):
@@ -83,12 +86,8 @@ def main(cfg: DictConfig):
         trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
         log.info(f"Best ckpt path: {ckpt_path}")
 
-    test_metrics = trainer.callback_metrics
-
-    # Merge train and test metrics
-    result_dict = {**train_metrics, **test_metrics}
-
-    return setup_dict, result_dict
+    # Finish logging
+    wandb.finish()
 
 
 if __name__ == "__main__":
