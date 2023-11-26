@@ -6,7 +6,6 @@ import torch
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import transforms
-from tqdm import tqdm
 
 from .homepage2vec.model import WebsiteClassifier
 from .utils import download_if_not_present, load
@@ -90,8 +89,9 @@ class CrowdSourcedDataModule(LightningDataModule):
         test_size = len(dataset) - train_size - val_size
 
         # Split the dataset
+        generator = torch.Generator().manual_seed(42)
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(
-            dataset, [train_size, val_size, test_size]
+            dataset, [train_size, val_size, test_size], generator=generator
         )
 
     def train_dataloader(self):
