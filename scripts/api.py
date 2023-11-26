@@ -133,6 +133,9 @@ def parse_classification_result(classification_str):
     classification_dict = {}
 
     for line in lines:
+        if ":" not in line:
+            print(f"Unexpected format in line: '{line}'")  # Logging the unexpected line
+            break 
         category, value = line.split(":")
         category, value = category.strip(), value.strip()
 
