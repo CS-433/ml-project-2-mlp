@@ -8,7 +8,7 @@ from typing import Any, Dict, Tuple
 import torch
 from lightning import LightningModule
 from torchmetrics import MaxMetric, MeanMetric
-from torchmetrics.classification.accuracy import Accuracy
+from torchmetrics.classification import MultilabelAccuracy as Accuracy
 
 from .homepage2vec.model import SimpleClassifier, WebsiteClassifier
 
@@ -51,12 +51,29 @@ class Homepage2VecModule(LightningModule):
         self.model.load_state_dict(model_tensor)
 
         # loss function
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.BCELoss()
 
         # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = Accuracy(task="multiclass", num_classes=self.output_dim)
-        self.val_acc = Accuracy(task="multiclass", num_classes=self.output_dim)
-        self.test_acc = Accuracy(task="multiclass", num_classes=self.output_dim)
+        threshold = 0.5  # TODO: move this to hydra
+
+        self.train_acc = Accuracy(
+            threshold=threshold,
+            num_labels=self.output_dim,
+            average="micro",
+            validate_args=True,
+        )
+        self.val_acc = Accuracy(
+            threshold=threshold,
+            num_labels=self.output_dim,
+            average="micro",
+            validate_args=True,
+        )
+        self.test_acc = Accuracy(
+            threshold=threshold,
+            num_labels=self.output_dim,
+            average="micro",
+            validate_args=True,
+        )
 
         # for averaging loss across batches
         self.train_loss = MeanMetric()
@@ -94,11 +111,10 @@ class Homepage2VecModule(LightningModule):
             - A tensor of target labels.
         """
         x, y = batch
-        logits, _ = self.forward(x)  # Returns topic logits and embeddings
-        print(logits.shape, y.shape)
-        loss = self.criterion(logits, y)
-        preds = torch.argmax(logits, dim=1)
-        return loss, preds, y
+        logits, _ = self.forward(x)  # Returns raw logits and embeddings
+        loss = self.criterion(torch.sigmoid(logits), y)
+
+        return loss, logits, y
 
     def training_step(
         self, batch: Tuple[torch.Tensor, torch.Tensor], _: int

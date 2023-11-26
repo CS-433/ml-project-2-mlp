@@ -3,6 +3,9 @@ Script for training a model on a dataset.
 """
 
 import logging
+import warnings
+
+warnings.filterwarnings("ignore", ".*does not have many workers.*")
 from typing import List
 
 import hydra
@@ -20,14 +23,14 @@ rootutils.set_root(
     project_root_env_var=True,
 )
 
-log = logging.Logger(__name__, level=logging.WARNING)
+
+log = logging.Logger(__name__, level=logging.CRITICAL)
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="train")
 def main(cfg: DictConfig):
     # Print experiment configuration
     print(OmegaConf.to_yaml(cfg))
-
     # Set all seeds
     if cfg.get("seed"):
         utils.seed_everything(cfg.seed)
