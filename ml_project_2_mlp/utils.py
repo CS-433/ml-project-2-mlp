@@ -27,8 +27,6 @@ from lightning import Callback
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
-from .conf import CROWDSOURCED_URL, CURLIE_URL, HOMEPAGE2VEC_URL
-
 log = logging.Logger(__name__)
 
 
@@ -108,109 +106,42 @@ def instantiate_loggers(logger_cfg: DictConfig) -> List[Logger]:
     return logger
 
 
-def load_curlie_data(dir_path: str):
+def load_from_gdrive(dir_path: str, gdrive_url: str, expected_files: list[str]):
     """
-    Loads the original processed Curlie data that was used
-    to train the Homepage2Vec model. If not present, downloads
-    downloads it from Google Drive first. Assumes that the data
-    directory exists.
-
-    Note: Doesn't load raw content into memory because it's too large (15GB.)
+    Loads folder of data/ model from Google Drive if not present in the specified
+    directory. Automatically extracts compressed files and reads them in based on the
+    file extension.
 
     Args:
         dir_path: Path to the directory containing the data.
+        gdrive_url: URL to the data on Google Drive.
+        expected_files: List of expected files in the directory.
 
     Returns:
-        class_names: List of class names.
-        class_vectors: Dictionary mapping class names to class vectors.
-        curlie_filtered: Pandas DataFrame containing the filtered Curlie data.
-        html_content: Dictionary mapping uids to HTML content. (Not included!)
-        test_uids: List of uids in the test set.
-        train_uids: List of uids in the train set.
+        Tuple of data from the files (in same order as expected_files).
     """
-    # Expected directory and files
-    expected_files = [
-        "class_names.txt",
-        "class_vector.json",
-        "curlie_filtered.csv",
-        # "html_content.json",
-        "test_uid.txt",
-        "train_uid.txt",
-    ]
+    # Create directory if not present
+    os.makedirs(dir_path, exist_ok=True)
 
     # Download if not present
-    _download_if_not_present(
-        dir_path=dir_path, expected_files=expected_files, gdrive_url=CURLIE_URL
+    download_if_not_present(
+        dir_path=dir_path, expected_files=expected_files, gdrive_url=gdrive_url
     )
 
     # Load data
+    data = load(dir_path=dir_path, expected_files=expected_files)
+
+    return data
+
+
+def load(dir_path: str, expected_files: list[str]):
+    # Load data
     expected_file_paths = list(map(lambda x: os.path.join(dir_path, x), expected_files))
-    curlie_data = _extract_and_read_files(expected_file_paths)
-
-    return curlie_data
-
-
-def load_crowdsourced_data(dir_path: str):
-    """
-    Loads the crowdsourced data from the data directory. If not present,
-    downloads it from Google Drive first. Assumes that the data
-    directory exists.
-
-    Args:
-        dir_path: Path to the directory containing the data.
-
-    Returns:
-        labeled: Pandas DataFrame containing the labeled data.
-        categories: Dictionary containing the categories.
-    """
-    # Expected files
-    expected_files = ["labeled.csv", "categories.json"]
-
-    # Download if not present
-    _download_if_not_present(
-        dir_path=dir_path,
-        expected_files=expected_files,
-        gdrive_url=CROWDSOURCED_URL,
-    )
-
-    # Read files (+ extract if necessary)
-    expected_file_paths = list(map(lambda x: os.path.join(dir_path, x), expected_files))
-    crowdsourced_data = _extract_and_read_files(expected_file_paths)
-
-    return crowdsourced_data
+    data = _extract_and_read_files(expected_file_paths)
+    return data
 
 
-def load_homepage2vec(dir_path: str):
-    """
-    Loads the model from the model directory. If not present,
-    downloads it from Google Drive first. Assumes that the model
-    directory exists.
-
-    Args:
-        dir_path: Path to the directory containing the model.
-
-    Returns:
-        model: Pre-trained PyTorch model.
-        features: List of features the model uses
-    """
-    # Define path and files
-    expected_files = ["model.pt", "features.txt"]
-
-    # Download if not present
-    _download_if_not_present(
-        dir_path=dir_path,
-        expected_files=expected_files,
-        gdrive_url=HOMEPAGE2VEC_URL,
-    )
-
-    # Read files (+ extract if necessary)
-    expected_file_paths = list(map(lambda x: os.path.join(dir_path, x), expected_files))
-    homepage2vec_data = _extract_and_read_files(expected_file_paths)
-
-    return homepage2vec_data
-
-
-def _download_if_not_present(
+def download_if_not_present(
     dir_path: str, expected_files: list[str], gdrive_url: str
 ) -> None:
     """
@@ -227,6 +158,7 @@ def _download_if_not_present(
     # Check if directory exists
     dir_exists = os.path.exists(dir_path)
     if not dir_exists:
+        os.makedirs(dir_path, exist_ok=True)
         log.info(f"{dir_path} doesn't exist. Downloading from Google Drive...")
         _download_from_gdrive(gdrive_url=gdrive_url, path_dir=dir_path)
 

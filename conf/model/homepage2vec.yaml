@@ -1,5 +1,5 @@
-_target_: ml_project_2_mlp.model.Homepage2VecLitModule
-model_path: ${paths.model_dir}/homepage2vec/model.pt
+_target_: ml_project_2_mlp.model.Homepage2VecModule
+model_path: ${paths.model_dir}/homepage2vec
 device: ${trainer.accelerator}
 
 optimizer:

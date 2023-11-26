@@ -3,13 +3,11 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - _self_
-  - data: default
+  - data: crowdsourced
   - model: mnist
   - logger: null
   - trainer: default
   - paths: default
-  - extras: default
-  - hydra: default
 
 # Experiment name
 name: ???

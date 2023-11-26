@@ -2,6 +2,7 @@
 Module containing the `LightningModule` for the Homepage2Vec model.
 """
 
+import os
 from typing import Any, Dict, Tuple
 
 import torch
@@ -12,7 +13,7 @@ from torchmetrics.classification.accuracy import Accuracy
 from .homepage2vec.model import SimpleClassifier, WebsiteClassifier
 
 
-class Homepage2VecLitModule(LightningModule):
+class Homepage2VecModule(LightningModule):
     """`LightningModule` for fine-tuning Homepage2Vec."""
 
     def __init__(
@@ -25,7 +26,7 @@ class Homepage2VecLitModule(LightningModule):
         """Initialize a `Homepage2VecLitModule`.
 
         Args:
-            model_path: The path to the weights to load
+            model_path: The path to the directory containing the pre-trained model
             device: The device to use for training
             optimizer: The optimiser to use for training
             scheduler: The learning rate scheduler to use for training
@@ -37,12 +38,13 @@ class Homepage2VecLitModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         # Load website classifier (feature extractor)
-        self.website_clf = WebsiteClassifier()  # Feature extractor
+        self.website_clf = WebsiteClassifier(model_path=model_path)  # Feature extractor
         self.input_dim = self.website_clf.input_dim
         self.output_dim = self.website_clf.output_dim
 
         # Load pre-trained model (classification head)
-        model_tensor = torch.load(model_path, map_location=device)
+        weight_path = os.path.join(model_path, "model.pt")
+        model_tensor = torch.load(weight_path, map_location=device)
         self.model = SimpleClassifier(
             input_dim=self.website_clf.input_dim, output_dim=self.website_clf.output_dim
         )
@@ -92,7 +94,8 @@ class Homepage2VecLitModule(LightningModule):
             - A tensor of target labels.
         """
         x, y = batch
-        logits = self.forward(x)
+        logits, _ = self.forward(x)  # Returns topic logits and embeddings
+        print(logits.shape, y.shape)
         loss = self.criterion(logits, y)
         preds = torch.argmax(logits, dim=1)
         return loss, preds, y

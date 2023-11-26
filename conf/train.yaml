@@ -3,7 +3,7 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - _self_
-  - data: crowd
+  - data: crowdsourced
   - model: homepage2vec
   - trainer: mps
   - callbacks: default

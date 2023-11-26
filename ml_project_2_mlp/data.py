@@ -1,34 +1,59 @@
 import os
+from math import exp
+from typing import List, Tuple
 
-import pandas as pd
-import pytorch_lightning as pl
 import torch
+from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
+from torchvision.transforms import transforms
 from tqdm import tqdm
 
 from .homepage2vec.model import WebsiteClassifier
+from .utils import download_if_not_present, load
 
 
-class CrowdSourcedDataset(Dataset):
-    def __init__(self, embeddings, labels):
+class CrowdSourcedData(Dataset):
+    """
+    Pytorch Dataset for the CrowdSourced data. Samples are tuples of an
+    embedded website (according to Homepage2Vec TextualExtractor) and a
+    one-hot encoded vector indicating all relevant topics for that website.
+    """
+
+    def __init__(self, embeddings: torch.Tensor, labels: torch.Tensor):
         self.embeddings = embeddings
         self.labels = labels
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.embeddings.size(0)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.embeddings[idx], self.labels[idx]
 
 
-class CrowdSourcedDataModule(pl.LightningDataModule):
+class CrowdSourcedDataModule(LightningDataModule):
+    """
+    A `PyTorch Lightning DataModule` for the crowd-sourced data which includes
+    functionality for downloading the data, splitting it into train, validation
+    and test sets, and loading it into `DataLoader`s.
+    """
+
     def __init__(
-        self, data_dir, data_split=[0.6, 0.2, 0.2], batch_size=32, num_workers=0
+        self,
+        name: str,
+        data_dir: str,
+        urls: dict[str, str],
+        data_split: List[float] = [0.6, 0.2, 0.2],
+        batch_size: int = 32,
+        num_workers: int = 0,
+        pin_memory: bool = False,
     ):
         super().__init__()
 
         # Set the hyperparameters
         self.save_hyperparameters(logger=False)
+
+        # Transforms (to float tensor)
+        self.transforms = transforms.Compose([transforms.Lambda(lambda x: x.float())])
 
         # Data attributes
         self.embeddings = None
@@ -38,56 +63,26 @@ class CrowdSourcedDataModule(pl.LightningDataModule):
         """
         Fetch the websites and embedded them.
         """
-
-        # Load the csv file with the websites urls, id and one-hot encoded labels
-        websites = pd.read_csv(os.path.join(self.hparams.data_path, "websites.csv"))
-
-        # Make sure embeddings exist
-        if not os.path.exists(os.path.join(self.hparams.data_path, "embeddings.pt")):
-            # Load the model
-            model = WebsiteClassifier()
-
-            # Fetch the website and then embed them
-            embeddings = []
-            for url in tqdm(websites["Input.url"], desc="Embedding websites"):
-                # Fetch the website
-                website = model.fetch_website(url)
-
-                # Obtain the features
-                website.features = model.get_features(
-                    website.url, website.html, website.screenshot_path
-                )
-
-                # Aggregate the features
-                all_features = self.concatenate_features(website)
-
-                # Turn into a tensor with gradient tracking off
-                embedding = torch.FloatTensor(all_features, requires_grad=False)
-
-                # Add to the list of embeddings
-                embeddings.append(embedding)
-
-            # Put the embeddings in torch tensor
-            embeddings = torch.stack(embeddings)
-
-            # Save the embeddings
-            torch.save(
-                embeddings, os.path.join(self.hparams.data_path, "embeddings.pt")
-            )
-
-            # Get the labels and save them
-            labels = torch.LongTensor(websites.iloc[:, -14:].values)
-            torch.save(labels, os.path.join(self.hparams.data_path, "labels.pt"))
-
-    def setup(self):
-        # Load the embeddings and labels
-        self.embeddings = torch.load(
-            os.path.join(self.hparams.data_path, "embeddings.pt")
+        # Load the embedded websites (download if necessary)
+        download_if_not_present(
+            dir_path=os.path.join(self.hparams.data_dir, self.hparams.name, "embedded"),
+            gdrive_url=self.hparams.urls["embedded"],
+            expected_files=["embeddings.pt", "labels.pt"],
         )
-        self.labels = torch.load(os.path.join(self.hparams.data_path, "labels.pt"))
+
+    def setup(self, stage: str | None = None):
+        # Load the embeddings and labels
+        self.embeddings, self.labels = load(
+            dir_path=os.path.join(self.hparams.data_dir, self.hparams.name, "embedded"),
+            expected_files=["embeddings.pt", "labels.pt"],
+        )
+
+        # Convert to float tensor
+        self.embeddings = self.transforms(self.embeddings)
+        self.labels = self.transforms(self.labels)
 
         # Define Custom Dataset
-        dataset = CrowdSourcedDataset(self.embeddings, self.labels)
+        dataset = CrowdSourcedData(self.embeddings, self.labels)
 
         # Compute the sizes of the splits
         train_size = int(self.hparams.data_split[0] * len(dataset))
@@ -102,17 +97,26 @@ class CrowdSourcedDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,
-            batch_size=self.batch_size,
+            batch_size=self.hparams.batch_size,
             shuffle=True,
-            num_workers=self.num_workers,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
         )
 
     def val_dataloader(self):
         return DataLoader(
-            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.val_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
         )
 
     def test_dataloader(self):
         return DataLoader(
-            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.test_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
         )

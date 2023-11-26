@@ -20,7 +20,7 @@ rootutils.set_root(
     project_root_env_var=True,
 )
 
-log = logging.Logger(__name__, level=logging.INFO)
+log = logging.Logger(__name__, level=logging.WARNING)
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="train")
@@ -33,8 +33,8 @@ def main(cfg: DictConfig):
         utils.seed_everything(cfg.seed)
 
     # Instantiate data module
-    # log.info(f"Instantiating datamodule <{cfg.data._target_}>")
-    # datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data)
+    log.info(f"Instantiating datamodule <{cfg.data._target_}>")
+    datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data)
 
     # Instantiate model module
     log.info(f"Instantiating model <{cfg.model._target_}>")
@@ -54,11 +54,9 @@ def main(cfg: DictConfig):
         cfg.trainer, callbacks=callbacks, logger=logger
     )
 
-    return
-
     setup_dict = {
         "cfg": cfg,
-        # "datamodule": datamodule,
+        "datamodule": datamodule,
         "model": model,
         "callbacks": callbacks,
         "logger": logger,
