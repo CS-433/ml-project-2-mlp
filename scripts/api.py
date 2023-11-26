@@ -71,7 +71,9 @@ def scrape_website(
         "title": soup.title.string if soup.title else None,
         "links": list(links.items())[:max_links],
         "meta_tags": meta_tags,
-        "content_preview": " ".join(sentences[:max_sentences]) if max_sentences else " ".join(sentences),
+        "content_preview": " ".join(sentences[:max_sentences])
+        if max_sentences
+        else " ".join(sentences),
         "additional_elements": elements,
     }
 
@@ -135,7 +137,7 @@ def parse_classification_result(classification_str):
     for line in lines:
         if ":" not in line:
             print(f"Unexpected format in line: '{line}'")  # Logging the unexpected line
-            break 
+            break
         category, value = line.split(":")
         category, value = category.strip(), value.strip()
 
