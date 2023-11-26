@@ -68,17 +68,22 @@ class Homepage2VecModule(LightningModule):
         }
         # - Training
         self.train_metrics = [
-            ("acc", Accuracy, clf_metrics_kwargs),
+            ("f1", F1, clf_metrics_kwargs),
             ("loss", MeanMetric, None),
         ]
         self._set_metrics(self.train_metrics, "train")
 
         # - Validation
         self.val_metrics = [
-            ("acc", Accuracy, clf_metrics_kwargs),
+            ("f1", F1, clf_metrics_kwargs),
             ("loss", MeanMetric, None),
         ]
+        assert (
+            self.val_metrics[0][0] == "f1"
+        ), "First metric must be f1 since it is used for early stopping! Change the hydra config file accordingly."
         self._set_metrics(self.val_metrics, "val")
+        # Tracks the first metric in `self.val_metrics`
+        self.val_metric_best = MaxMetric()
 
         # Testing metrics
         self.test_metrics = [
@@ -90,9 +95,6 @@ class Homepage2VecModule(LightningModule):
             ("loss", MeanMetric, None),
         ]
         self._set_metrics(self.test_metrics, "test")
-
-        # For tracking best so far validation accuracy
-        self.val_acc_best = MaxMetric()
 
     def _set_metrics(self, metrics: List[Tuple[str, Metric, str]], mode: str) -> None:
         for name, metric_class, kwargs in metrics:
@@ -209,10 +211,14 @@ class Homepage2VecModule(LightningModule):
         """
         Lightning hook that is called when a validation epoch ends.
         """
-        acc = self.val_acc.compute()  # get current val acc
-        self.val_acc_best(acc)  # update best so far val acc
+        metric_name = self.val_metrics[0][0]
+        metric_value = getattr(self, f"val_{metric_name}").compute()
+        self.val_metric_best(metric_value)
         self.log(
-            "val/acc_best", self.val_acc_best.compute(), sync_dist=True, prog_bar=True
+            f"val/{metric_name}_best",
+            self.val_metric_best.compute(),
+            sync_dist=True,
+            prog_bar=True,
         )
 
     def test_step(
