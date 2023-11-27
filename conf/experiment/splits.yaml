@@ -1,0 +1,17 @@
+# @package _global_
+
+# Run this experiment with:
+# poetry run train experiment=example
+
+defaults:
+  - override /data: crowdsourced
+  - override /logger: wandb
+  - override /search: optuna
+
+# Experiment tags
+tags: ["splits"]
+
+hydra:
+  sweeper:
+    params:
+      data.data_split: choice([0.6,0.2,0.2], [0.4,0.2,0.4])

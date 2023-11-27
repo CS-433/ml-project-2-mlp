@@ -5,7 +5,7 @@ import ml_project_2_mlp
 from .utils import get_all_python_files, get_modules_and_functions
 
 MODULES, FUNCTIONS = get_modules_and_functions(ml_project_2_mlp)
-PYTHON_FILES = get_all_python_files(ml_project_2_mlp.conf.ROOT_PATH)
+PYTHON_FILES = get_all_python_files(".")
 
 
 @pytest.mark.parametrize("module", MODULES)
@@ -13,6 +13,7 @@ def test_check_module_docstring(module):
     """
     Tests that module has docstrings.
     """
+    print()
     assert module.__doc__, f"Module {module.__name__} has no docstring."
 
 

@@ -10,18 +10,25 @@ Functions:
 
 import gzip
 import json
+import logging
 import os
 import shutil
+import warnings
 import zipfile
+from typing import Any, Dict, List, Optional, Sequence
 
 import gdown
+import hydra
 import pandas as pd
+import rich
+import rich.syntax
+import rich.tree
 import torch
+from lightning import Callback
+from lightning.pytorch.loggers import Logger
+from omegaconf import DictConfig, OmegaConf
 
-from .conf import CROWDSOURCED_URL, CURLIE_URL, HOMEPAGE2VEC_URL
-from .log import get_logger
-
-log = get_logger(__name__)
+log = logging.Logger(__name__)
 
 
 def check_import() -> bool:
@@ -29,109 +36,254 @@ def check_import() -> bool:
     return True
 
 
-def load_curlie_data(dir_path: str):
-    """
-    Loads the original processed Curlie data that was used
-    to train the Homepage2Vec model. If not present, downloads
-    downloads it from Google Drive first. Assumes that the data
-    directory exists.
+def extras(cfg: DictConfig) -> None:
+    """Applies optional utilities before the task is started.
 
-    Note: Doesn't load raw content into memory because it's too large (15GB.)
+    Utilities:
+        - Ignoring python warnings
+        - Rich config printing
+
+    Args:
+        cfg: A DictConfig object containing the config tree.
+    """
+    # Return if no `extras` config
+    if not cfg.get("extras"):
+        log.warning("Extras config not found! <cfg.extras=null>")
+        return
+
+    # Disable python warnings
+    if cfg.extras.get("ignore_warnings"):
+        log.info("Disabling python warnings! <cfg.extras.ignore_warnings=True>")
+        warnings.filterwarnings("ignore")
+
+    # Print config with rich
+    if cfg.extras.get("print_config"):
+        log.info("Printing config tree with Rich! <cfg.extras.print_config=True>")
+        print_config_tree(cfg, resolve=True)
+
+
+def print_config_tree(
+    cfg: DictConfig,
+    print_order: Sequence[str] = (
+        "data",
+        "model",
+        "callbacks",
+        "logger",
+        "trainer",
+        "paths",
+        "extras",
+    ),
+    resolve: bool = False,
+    save_to_file: bool = False,
+) -> None:
+    """
+    Prints the contents of a DictConfig as a tree structure using the Rich library.
+
+    Args:
+        cfg: A DictConfig composed by Hydra.
+        print_order: Determines in what order config components are printed. Default is ``("data", "model",
+        "callbacks", "logger", "trainer", "paths", "extras")``.
+        resolve: Whether to resolve reference fields of DictConfig. Default is ``False``.
+    """
+    style = "dim"
+    tree = rich.tree.Tree("CONFIG", style=style, guide_style=style)
+
+    queue = []
+
+    # Add fields from `print_order` to queue
+    for field in print_order:
+        queue.append(field) if field in cfg else log.warning(
+            f"Field '{field}' not found in config. Skipping '{field}' config printing..."
+        )
+
+    # Add all the other fields to queue (not specified in `print_order`)
+    for field in cfg:
+        if field not in queue:
+            queue.append(field)
+
+    # Generate config tree from queue
+    for field in queue:
+        branch = tree.add(field, style=style, guide_style=style)
+
+        config_group = cfg[field]
+        if isinstance(config_group, DictConfig):
+            branch_content = OmegaConf.to_yaml(config_group, resolve=resolve)
+        else:
+            branch_content = str(config_group)
+
+        branch.add(rich.syntax.Syntax(branch_content, "yaml"))
+
+    # print config tree
+    rich.print(tree)
+
+
+def get_metric_value(
+    metric_dict: Dict[str, Any], metric_name: Optional[str]
+) -> Optional[float]:
+    """
+    Safely retrieves value of the metric logged in LightningModule.
+
+    :param metric_dict: A dict containing metric values.
+    :param metric_name: If provided, the name of the metric to retrieve.
+    :return: If a metric name was provided, the value of the metric.
+    """
+    if not metric_name:
+        log.info("Metric name is None! Skipping metric value retrieval...")
+        return None
+
+    if metric_name not in metric_dict:
+        raise Exception(
+            f"Metric value not found! <metric_name={metric_name}>\n"
+            "Make sure metric name logged in LightningModule is correct!\n"
+            "Make sure `optimized_metric` name in `hparams_search` config is correct!"
+        )
+
+    metric_value = metric_dict[metric_name].item()
+    log.info(f"Retrieved metric value! <{metric_name}={metric_value}>")
+
+    return metric_value
+
+
+def log_hyperparameters(setup_dict: dict) -> None:
+    """
+    Controls which config parts are saved by Lightning loggers.
+
+    Additionally saves:
+        - Number of model parameters (trainable, non-trainable, total)
+
+    Args:
+        setup_dict: A dictionary containing the following objects:
+        - `"cfg"`: A DictConfig object containing the main config.
+        - `"model"`: The Lightning model.
+        - `"trainer"`: The Lightning trainer.
+        - `"callbacks"`: A list of Lightning callbacks.
+        - `"extras"`: A list of extra objects to save.
+    """
+    hparams = {}
+
+    cfg = OmegaConf.to_container(setup_dict["cfg"])
+    model = setup_dict["model"]
+    trainer = setup_dict["trainer"]
+
+    if not trainer.logger:
+        log.warning("Logger not found! Skipping hyperparameter logging...")
+        return
+
+    # Save information on run
+    hparams["task_name"] = cfg.get("task_name")
+    hparams["tags"] = cfg.get("tags")
+    hparams["seed"] = cfg.get("seed")
+
+    # Save model, data, trainer and callback configs
+    hparams["model"] = cfg["model"]
+    hparams["data"] = cfg["data"]
+    hparams["trainer"] = cfg["trainer"]
+    hparams["callbacks"] = cfg.get("callbacks")
+
+    # Additionally: Save number of model parameters
+    hparams["model/params/total"] = sum(p.numel() for p in model.parameters())
+    hparams["model/params/trainable"] = sum(
+        p.numel() for p in model.parameters() if p.requires_grad
+    )
+    hparams["model/params/non_trainable"] = sum(
+        p.numel() for p in model.parameters() if not p.requires_grad
+    )
+
+    # Log hyperparameters in all loggers
+    for logger in trainer.loggers:
+        logger.log_hyperparams(hparams)
+
+
+def instantiate_callbacks(callbacks_cfg: DictConfig) -> List[Callback]:
+    """
+    Instantiates callbacks for lightning.Trainer from Hydra configuration.
+
+    Args:
+        callback_cfg: Hydra configurations for callbacks
+
+    Returns:
+        A list of instantiated callbacks.
+    """
+    callbacks: List[Callback] = []
+
+    if not callbacks_cfg:
+        log.warning("No callback configs found! Skipping..")
+        return callbacks
+
+    if not isinstance(callbacks_cfg, DictConfig):
+        raise TypeError("Callbacks config must be a DictConfig!")
+
+    for _, cb_conf in callbacks_cfg.items():
+        if isinstance(cb_conf, DictConfig) and "_target_" in cb_conf:
+            log.info(f"Instantiating callback <{cb_conf._target_}>")
+            callbacks.append(hydra.utils.instantiate(cb_conf))
+
+    return callbacks
+
+
+def instantiate_loggers(logger_cfg: DictConfig) -> List[Logger]:
+    """
+    Instantiates loggers from config.
+
+    Args:
+        logger_cfg: A DictConfig object containing logger configurations.
+
+    Returns:
+        A list of instantiated loggers.
+    """
+    logger: List[Logger] = []
+
+    if not logger_cfg:
+        log.warning("No logger configs found! Skipping...")
+        return logger
+
+    if not isinstance(logger_cfg, DictConfig):
+        raise TypeError("Logger config must be a DictConfig!")
+
+    for _, lg_conf in logger_cfg.items():
+        if isinstance(lg_conf, DictConfig) and "_target_" in lg_conf:
+            log.info(f"Instantiating logger <{lg_conf._target_}>")
+            logger.append(hydra.utils.instantiate(lg_conf))
+
+    return logger
+
+
+def load_from_gdrive(dir_path: str, gdrive_url: str, expected_files: list[str]):
+    """
+    Loads folder of data/ model from Google Drive if not present in the specified
+    directory. Automatically extracts compressed files and reads them in based on the
+    file extension.
 
     Args:
         dir_path: Path to the directory containing the data.
+        gdrive_url: URL to the data on Google Drive.
+        expected_files: List of expected files in the directory.
 
     Returns:
-        class_names: List of class names.
-        class_vectors: Dictionary mapping class names to class vectors.
-        curlie_filtered: Pandas DataFrame containing the filtered Curlie data.
-        html_content: Dictionary mapping uids to HTML content. (Not included!)
-        test_uids: List of uids in the test set.
-        train_uids: List of uids in the train set.
+        Tuple of data from the files (in same order as expected_files).
     """
-    # Expected directory and files
-    expected_files = [
-        "class_names.txt",
-        "class_vector.json",
-        "curlie_filtered.csv",
-        # "html_content.json",
-        "test_uid.txt",
-        "train_uid.txt",
-    ]
+    # Create directory if not present
+    os.makedirs(dir_path, exist_ok=True)
 
     # Download if not present
-    _download_if_not_present(
-        dir_path=dir_path, expected_files=expected_files, gdrive_url=CURLIE_URL
+    download_if_not_present(
+        dir_path=dir_path, expected_files=expected_files, gdrive_url=gdrive_url
     )
 
     # Load data
+    data = load(dir_path=dir_path, expected_files=expected_files)
+
+    return data
+
+
+def load(dir_path: str, expected_files: list[str]):
+    # Load data
     expected_file_paths = list(map(lambda x: os.path.join(dir_path, x), expected_files))
-    curlie_data = _extract_and_read_files(expected_file_paths)
-
-    return curlie_data
-
-
-def load_crowdsourced_data(dir_path: str):
-    """
-    Loads the crowdsourced data from the data directory. If not present,
-    downloads it from Google Drive first. Assumes that the data
-    directory exists.
-
-    Args:
-        dir_path: Path to the directory containing the data.
-
-    Returns:
-        labeled: Pandas DataFrame containing the labeled data.
-        categories: Dictionary containing the categories.
-    """
-    # Expected files
-    expected_files = ["labeled.csv", "categories.json"]
-
-    # Download if not present
-    _download_if_not_present(
-        dir_path=dir_path,
-        expected_files=expected_files,
-        gdrive_url=CROWDSOURCED_URL,
-    )
-
-    # Read files (+ extract if necessary)
-    expected_file_paths = list(map(lambda x: os.path.join(dir_path, x), expected_files))
-    crowdsourced_data = _extract_and_read_files(expected_file_paths)
-
-    return crowdsourced_data
+    data = _extract_and_read_files(expected_file_paths)
+    return data
 
 
-def load_homepage2vec(dir_path: str):
-    """
-    Loads the model from the model directory. If not present,
-    downloads it from Google Drive first. Assumes that the model
-    directory exists.
-
-    Args:
-        dir_path: Path to the directory containing the model.
-
-    Returns:
-        model: Pre-trained PyTorch model.
-        features: List of features the model uses
-    """
-    # Define path and files
-    expected_files = ["model.pt", "features.txt"]
-
-    # Download if not present
-    _download_if_not_present(
-        dir_path=dir_path,
-        expected_files=expected_files,
-        gdrive_url=HOMEPAGE2VEC_URL,
-    )
-
-    # Read files (+ extract if necessary)
-    expected_file_paths = list(map(lambda x: os.path.join(dir_path, x), expected_files))
-    homepage2vec_data = _extract_and_read_files(expected_file_paths)
-
-    return homepage2vec_data
-
-
-def _download_if_not_present(
+def download_if_not_present(
     dir_path: str, expected_files: list[str], gdrive_url: str
 ) -> None:
     """
@@ -148,6 +300,7 @@ def _download_if_not_present(
     # Check if directory exists
     dir_exists = os.path.exists(dir_path)
     if not dir_exists:
+        os.makedirs(dir_path, exist_ok=True)
         log.info(f"{dir_path} doesn't exist. Downloading from Google Drive...")
         _download_from_gdrive(gdrive_url=gdrive_url, path_dir=dir_path)
 

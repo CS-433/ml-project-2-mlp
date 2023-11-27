@@ -1,0 +1,12 @@
+# https://wandb.ai
+
+wandb:
+  _target_: lightning.pytorch.loggers.wandb.WandbLogger
+  entity: ml-project-2-mlp # W&B team
+  project: homepage2vec # W&B project
+  save_dir: "${paths.output_dir}" # Where to save W&B logs
+  log_model: true # Log model as they get created during training
+  offline: false # Whether to sync to W&B
+  id: null # Use ID to resume training
+  group: null # Assign group
+  tags: ${tags} # Log tags

@@ -1,0 +1,32 @@
+# @package _global_
+
+# Default configurations (precendence in reverse order)
+defaults:
+  - data: crowdsourced # Don't change!
+  - logger: wandb # Don't change!
+  - model: homepage2vec
+  - callbacks: default
+  - trainer: default
+  - paths: default
+  - hydra: default
+  - extras: default
+  - optional local: default
+  - _self_
+
+# Task name (determines output directory)
+task_name: eval
+
+# List of tags (logged to W&B)
+tags: ["dev"]
+
+# W&B Run ID
+run: ???
+
+# Model version (Can be `latest`, `best` or specific version, e.g. `v0`)
+version: best
+
+# Compute checkpoint
+wandb_ckpt: ${logger.wandb.entity}/${logger.wandb.project}/model-${run}:${version}
+
+# Random seed for reproducibility
+seed: 42

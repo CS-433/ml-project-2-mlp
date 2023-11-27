@@ -2,6 +2,14 @@
 .*_cache
 /data
 /models
+/outputs
+/logs
+/artifacts
+/wandb
+/conf/local/*
+
+!.gitkeep
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,0 +1,28 @@
+# @package _global_
+
+# Default configurations (precendence in reverse order)
+defaults:
+  - _self_
+  - data: ???
+  - model: homepage2vec
+  - logger: null
+  - callbacks: default
+  - trainer: default
+  - paths: default
+  - hydra: default
+  - extras: default
+  - search: null
+  - experiment: null
+  - optional local: default
+
+# Task name (determines output directory)
+task_name: train
+
+# List of tags (logged to W&B)
+tags: [dev]
+
+# Whether to also test the model on best performing model
+test: True
+
+# Random seed for reproducibility
+seed: 42

@@ -1,0 +1,5 @@
+defaults:
+  - default
+
+data_dir: ${paths.data_dir}/llm
+_target_: ml_project_2_mlp.data.LLMAugmentedDataModule

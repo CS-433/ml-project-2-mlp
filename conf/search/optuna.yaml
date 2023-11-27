@@ -1,0 +1,42 @@
+# @package _global_
+
+defaults:
+  - override /hydra/sweeper: optuna
+
+# Metric to optimise for
+optimized_metric: "val/f1"
+
+# Define Optuna hyperparameter search
+# https://hydra.cc/docs/next/plugins/optuna_sweeper
+hydra:
+  mode: "MULTIRUN" # set hydra to multirun by default if this config is attached
+
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+
+    # Storage URL to persist optimization results
+    storage: null
+
+    # Name of the study to persist optimization results
+    study_name: null
+
+    # Number of parallel workers
+    n_jobs: 1
+
+    # 'minimize' or 'maximize' the objective
+    direction: maximize
+
+    # Total number of runs that will be executed
+    n_trials: 10
+
+    # Choose Optuna hyperparameter sampler (bayesian (TPE), random search, grid sampler, ...)
+    # https://optuna.readthedocs.io/en/stable/reference/samplers.html
+    sampler:
+      _target_: optuna.samplers.TPESampler
+      seed: ${seed}
+      n_startup_trials: 10 # Number of random sampling runs before optimization starts
+
+    # Define hyperparameter search space
+    params:
+      model.optimizer.lr: interval(0.001, 0.1)
+      data.batch_size: choice(32, 64, 128)

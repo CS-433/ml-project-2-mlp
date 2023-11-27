@@ -18,7 +18,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from ..homepage2vec.data_collection import access_website
-from ..homepage2vec.model_loader import get_model_path
 from ..homepage2vec.textual_extractor import TextualExtractor
 
 
@@ -27,7 +26,9 @@ class WebsiteClassifier:
     Pretrained Homepage2vec model
     """
 
-    def __init__(self, device=None, cpu_threads_count=1, dataloader_workers=1):
+    def __init__(
+        self, model_path: str, device=None, cpu_threads_count=1, dataloader_workers=1
+    ):
         self.input_dim = 4665
         self.output_dim = 14
         self.classes = [
@@ -47,8 +48,6 @@ class WebsiteClassifier:
             "Sports",
         ]
 
-        self.model_home_path, self.model_path = get_model_path()
-
         self.temporary_dir = tempfile.gettempdir() + "/homepage2vec/"
 
         self.device = device
@@ -62,16 +61,16 @@ class WebsiteClassifier:
                 torch.set_num_threads(cpu_threads_count)
 
         # load pretrained model
-        model_tensor = torch.load(
-            self.model_path + "/model.pt", map_location=torch.device(self.device)
-        )
+        weight_path = os.path.join(model_path, "model.pt")
+        model_tensor = torch.load(weight_path, map_location=torch.device(self.device))
         self.model = SimpleClassifier(self.input_dim, self.output_dim)
         self.model.load_state_dict(model_tensor)
 
         # features used in training
         self.features_order = []
         self.features_dim = {}
-        with open(self.model_path + "/features.txt", "r") as file:
+        feature_path = os.path.join(model_path, "features.txt")
+        with open(feature_path, "r") as file:
             for f in file:
                 name = f.split(" ")[0]
                 dim = int(f.split(" ")[1][:-1])
