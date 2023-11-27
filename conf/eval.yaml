@@ -8,6 +8,7 @@ defaults:
   - callbacks: default
   - trainer: default
   - paths: default
+  - hydra: default
   - extras: default
   - optional local: default
   - _self_

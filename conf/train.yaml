@@ -9,7 +9,9 @@ defaults:
   - callbacks: default
   - trainer: default
   - paths: default
+  - hydra: default
   - extras: default
+  - search: null
   - experiment: null
   - optional local: default
 
