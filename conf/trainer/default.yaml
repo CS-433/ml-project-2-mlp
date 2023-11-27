@@ -3,7 +3,7 @@ _target_: lightning.pytorch.trainer.Trainer
 default_root_dir: ${paths.output_dir}
 
 min_epochs: 0 # Minimum number of epochs to train (prevents too early stopping)
-max_epochs: 10 # Maximum number of epochs
+max_epochs: 30 # Maximum number of epochs
 
 # Default accelerator and devices
 accelerator: cpu
