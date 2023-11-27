@@ -3,16 +3,29 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - data: crowdsourced # Don't change!
+  - logger: wandb # Don't change!
   - model: homepage2vec
-  - logger: wandb
+  - callbacks: default
   - trainer: default
   - paths: default
-  - global: default
+  - extras: default
+  - optional local: default
   - _self_
 
-# Specific for `eval.py`
-run: ??? # W&B Run ID
-version: best # Model version (Can be `latest`, `best` or specific version, e.g. `v0`)
-wandb_ckpt: ${logger.wandb.entity}/${logger.wandb.project}/model-${run}:${version}
+# Task name (determines output directory)
 task_name: eval
+
+# List of tags (logged to W&B)
 tags: ["dev"]
+
+# W&B Run ID
+run: ???
+
+# Model version (Can be `latest`, `best` or specific version, e.g. `v0`)
+version: best
+
+# Compute checkpoint
+wandb_ckpt: ${logger.wandb.entity}/${logger.wandb.project}/model-${run}:${version}
+
+# Random seed for reproducibility
+seed: 42
