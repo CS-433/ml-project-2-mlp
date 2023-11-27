@@ -60,27 +60,28 @@ class Homepage2VecModule(LightningModule):
         # Loss function
         self.criterion = torch.nn.BCEWithLogitsLoss()
 
-        # Setup Metrics
+        # Setup metric kwargs
         clf_metrics_kwargs = {
             "num_labels": self.output_dim,
             "threshold": self.hparams.threshold,
             "average": "macro",
         }
-        # - Training
+
+        # Training metrics
         self.train_metrics = [
             ("f1", F1, clf_metrics_kwargs),
+            ("acc", Accuracy, clf_metrics_kwargs),
             ("loss", MeanMetric, None),
         ]
         self._set_metrics(self.train_metrics, "train")
 
-        # - Validation
+        # Validation metrics
         self.val_metrics = [
             ("f1", F1, clf_metrics_kwargs),
+            ("acc", Accuracy, clf_metrics_kwargs),
             ("loss", MeanMetric, None),
         ]
-        assert (
-            self.val_metrics[0][0] == "f1"
-        ), "First metric must be f1 since it is used for early stopping! Change the hydra config file accordingly."
+
         self._set_metrics(self.val_metrics, "val")
         # Tracks the first metric in `self.val_metrics`
         self.val_metric_best = MaxMetric()
@@ -91,44 +92,10 @@ class Homepage2VecModule(LightningModule):
             ("f1", F1, clf_metrics_kwargs),
             ("precision", Precision, clf_metrics_kwargs),
             ("recall", Recall, clf_metrics_kwargs),
-            ("LPP", LabelsPerPage, None),
+            ("lpp", LabelsPerPage, None),
             ("loss", MeanMetric, None),
         ]
         self._set_metrics(self.test_metrics, "test")
-
-    def _set_metrics(self, metrics: List[Tuple[str, Metric, str]], mode: str) -> None:
-        for name, metric_class, kwargs in metrics:
-            if kwargs is None:
-                setattr(self, f"{mode}_{name}", metric_class())
-            else:
-                setattr(self, f"{mode}_{name}", metric_class(**kwargs))
-
-    def _update_log_metrics(
-        self,
-        metrics: List[Tuple[str, Metric, str]],
-        logits: torch.Tensor,
-        targets: torch.Tensor,
-        mode: str,
-    ):
-        loss = None
-        for name, _, _ in metrics:
-            # Update
-            if name != "loss":
-                getattr(self, f"{mode}_{name}")(logits, targets)
-            else:
-                loss = self.criterion(logits, targets.float())
-                getattr(self, f"{mode}_{name}")(loss)
-
-            # Log
-            self.log(
-                f"{mode}/{name}",
-                getattr(self, f"{mode}_{name}"),
-                on_step=False,
-                on_epoch=True,
-                prog_bar=True,
-            )
-
-        return loss
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -271,3 +238,48 @@ class Homepage2VecModule(LightningModule):
                 },
             }
         return {"optimizer": optimizer}
+
+    def _set_metrics(self, metrics: List[Tuple[str, Metric, str]], mode: str) -> None:
+        """
+        Utility function to set metrics as attributes of the model.
+
+        Args:
+            metrics: A list of tuples containing the name of the metric, the metric class and
+                the keyword arguments to pass to the metric class constructor.
+            mode: The mode for which to set the metrics. Must be one of "train", "val" or "test".
+        """
+        for name, metric_class, kwargs in metrics:
+            if kwargs is None:
+                setattr(self, f"{mode}_{name}", metric_class())
+            else:
+                setattr(self, f"{mode}_{name}", metric_class(**kwargs))
+
+    def _update_log_metrics(
+        self,
+        metrics: List[Tuple[str, Metric, str]],
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+        mode: str,
+    ):
+        """
+        Utility function to update and log metrics for a given mode.
+        """
+        loss = None
+        for name, _, _ in metrics:
+            # Update
+            if name != "loss":
+                getattr(self, f"{mode}_{name}")(logits, targets)
+            else:
+                loss = self.criterion(logits, targets.float())
+                getattr(self, f"{mode}_{name}")(loss)
+
+            # Log
+            self.log(
+                f"{mode}/{name}",
+                getattr(self, f"{mode}_{name}"),
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+            )
+
+        return loss
