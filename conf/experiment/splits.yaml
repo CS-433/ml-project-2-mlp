@@ -6,12 +6,12 @@
 defaults:
   - override /data: crowdsourced
   - override /logger: wandb
+  - override /search: optuna
 
 # Experiment tags
-tags: ["crowdsourced"]
+tags: ["splits"]
 
-# Hyperparameter search
 hydra:
   sweeper:
     params:
-      data.batch_size: 32,64
+      data.data_split: choice([0.6,0.2,0.2], [0.4,0.2,0.4])
