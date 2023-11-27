@@ -7,12 +7,12 @@ from typing import List
 import hydra
 import lightning as L
 import rootutils
-import wandb
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
 import ml_project_2_mlp.utils as utils
+import wandb
 from ml_project_2_mlp.logger import RankedLogger
 
 # Setup root environment
@@ -76,6 +76,8 @@ def main(cfg: DictConfig):
     log.info("Starting training!")
     trainer.fit(model=model, datamodule=datamodule)
 
+    train_metrics = trainer.callback_metrics
+
     # Test model if specified
     if cfg.get("test"):
         log.info("Starting testing!")
@@ -86,8 +88,19 @@ def main(cfg: DictConfig):
         trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
         log.info(f"Best ckpt path: {ckpt_path}")
 
+    test_metrics = trainer.callback_metrics
+
+    metric_dict = {**train_metrics, **test_metrics}
+
+    # For hydra-optuna integration
+    metric_value = utils.get_metric_value(
+        metric_dict=metric_dict, metric_name=cfg.get("optimized_metric")
+    )
+
     # Finish logging
     wandb.finish()
+
+    return metric_value
 
 
 if __name__ == "__main__":
