@@ -3,6 +3,7 @@
 /data
 /models
 /outputs
+/logs
 /artifacts
 /wandb
 /conf/local/*
