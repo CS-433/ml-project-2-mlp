@@ -22,7 +22,10 @@ task_name: train
 tags: [dev]
 
 # Whether to also test the model on best performing model
-test: True
+test: true
 
 # Random seed for reproducibility
 seed: 42
+
+# Whether to finetune the model
+finetune: true

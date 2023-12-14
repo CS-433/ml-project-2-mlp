@@ -1,0 +1,13 @@
+# @package _global_
+
+# Run this experiment with:
+# poetry run train experiment=example
+
+defaults:
+  - override /data: crowdsourced
+  - override /logger: wandb
+
+# Experiment tags
+tags: ["baseline"]
+
+finetune: false
