@@ -12,6 +12,7 @@ import gzip
 import json
 import logging
 import os
+import re
 import shutil
 import warnings
 import zipfile
@@ -24,9 +25,11 @@ import rich
 import rich.syntax
 import rich.tree
 import torch
+from bs4 import BeautifulSoup as Soup
 from lightning import Callback
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig, OmegaConf
+from tld import get_tld
 
 log = logging.Logger(__name__)
 
@@ -552,3 +555,159 @@ def _read_class_vector(file_path: str) -> dict:
             print("Invalid JSON object:", obj)
             # Handle the error or continue
     return parsed_objects
+
+
+def clean_field(field: str) -> str:
+    """
+    Clean a field of a webpage
+
+    Args:
+        field: Field to clean
+
+    Returns:
+        Cleaned field
+    """
+    field = re.sub(r"\*|\n|\r|\t|\||:|-|–", "", field)
+    return field.strip()
+
+
+def clean_link(link: str) -> str:
+    """
+    Clean a link of a webpage
+
+    Args:
+        link: Link to clean
+
+    Returns:
+        Cleaned link
+    """
+    link = re.sub(r"www.|http://|https://|[0-9]+", "", link)
+    link = re.sub(r"-|_|=|\?|:", " ", link)
+    link = link.split("/")[1:]
+    return " ".join(link).strip()
+
+
+def split_in_sentences(soup: Soup) -> list[str]:
+    """
+    From the raw html content of a website, extract the text visible to the user and splits it in sentences
+
+    Args:
+        soup: BeautifulSoup object of the website
+
+    Returns:
+        List of sentences
+    """
+
+    sep = soup.get_text("[SEP]").split(
+        "[SEP]"
+    )  # separate text elements with special separators [SEP]
+    strip = [s.strip() for s in sep if s != "\n"]
+    clean = [s for s in strip if len(s) != 0]
+
+    return clean
+
+
+def parse_html(html: str, max_sentences: int = 100) -> dict:
+    """
+    Parse the HTML of a website and extract the following features:
+    - title
+    - description
+    - keywords
+    - links
+    - sentences
+    - metatags
+
+    Args:
+        html: HTML of the website
+        max_sentences: Maximum number of sentences to extract from the website
+
+    Returns:
+        A dictionary containing the extracted features
+    """
+
+    # Parse the HTML via BeautifulSoup
+    soup = Soup(html, "html.parser")
+
+    # Extract meta tags
+    metatags = soup.findAll("meta")
+    metatags = [m.get("name", None) for m in metatags]
+    metatags = [m for m in metatags if m is not None]
+    metatags = list(set([m.lower() for m in metatags]))
+
+    # Extract site title
+    title = soup.find("title")
+    if title is not None:
+        title = str(title.string)
+        title = clean_field(title)
+        if len(title) == 0:
+            title = None
+
+    # Extract site description
+    desc = soup.find("meta", attrs={"name": ["description", "Description"]})
+    if not desc:
+        desc = None
+    else:
+        content = desc.get("content", "")
+
+        if len(content.strip()) == 0:
+            desc = None
+        else:
+            desc = clean_field(content)
+
+    # Extract site keywords
+    kw = soup.find("meta", attrs={"name": "keywords"})
+    if not kw:
+        kw = None
+    else:
+        kw = kw.get("content", "")
+        if len(kw.strip()) == 0:
+            kw = None
+
+    # Extract site links
+    a_tags = soup.find_all("a", href=True)
+    links = [a.get("href", "") for a in a_tags]
+    links = [clean_link(link) for link in links]
+    links = [link for link in links if len(link) != 0]
+    links = [w.lower() for w in " ".join(links).split(" ") if len(w) != 0]
+    if len(links) == 0:
+        links = None
+
+    # Extract text
+    sentences = split_in_sentences(soup)[:max_sentences]
+    if len(sentences) == 0:
+        sentences = None
+
+    # Return the extracted features
+    return {
+        "title": title,
+        "description": desc,
+        "keywords": kw,
+        "links": links,
+        "sentences": sentences,
+        "metatags": metatags,
+    }
+
+
+def parse_url(url: str) -> dict:
+    """
+    Parse the URL of a website and extract the following features:
+    - tld
+    - domain
+
+    Args:
+        url: URL of the website
+
+    Returns:
+        A dictionary containing the extracted features
+    """
+
+    # Get tld of url
+    url_info = get_tld(url, as_object=True, fail_silently=True)
+
+    # Get tld
+    tld = url_info.tld
+
+    # Get domain name
+    domain = url_info.domain
+
+    return {"tld": tld, "domain": domain}
