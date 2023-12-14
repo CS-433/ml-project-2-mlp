@@ -1,3 +1,4 @@
+import json
 from openai import OpenAI
 import pandas as pd
 import requests
@@ -27,7 +28,7 @@ CATEGORIES = [
 ]
 
 
-def scrape_website(
+def parse_html(
     url,
     max_links=None,
     max_sentences=None,
@@ -92,78 +93,62 @@ def classify_website(website_data):
     dict: A dictionary where each key is a category and its value is either 0 (Not Relevant) or 1 (Relevant).
           The keys are strings exactly matching the category names, with underscores for spaces where necessary.
     """
+    example_website_data = {
+        "title": "Example Title",
+        "meta_tags": {
+            "keywords": "example, sample",
+            "description": "An example website",
+        },
+        "content_preview": "Sample content from the website",
+        "links": ["http://example.com/link1", "http://example.com/link2"],
+        "additional_elements": "Example additional HTML elements",
+    }
+
+    example_output = {
+        "Arts": 0,
+        "Business": 0,
+        "Computers": 1,
+        "Games": 0,
+        "Health": 0,
+        "Home": 0,
+        "Kids_and_Teens": 0,
+        "News": 0,
+        "Recreation": 0,
+        "Reference": 1,
+        "Science": 0,
+        "Shopping": 0,
+        "Society": 0,
+        "Sports": 0,
+    }
+
     messages = [
         {
             "role": "system",
-            "content": "You are an assistant skilled in website classification using HTML content. Analyze the provided website data and classify it into relevant categories. Use the exact category names with underscores for spaces where necessary, and determine the website's relevance to each category as either 0 (Not Relevant) or 1 (Relevant).",
+            "content": "You are an assistant skilled in website classification using HTML content. Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as keys and binary values (0 or 1) indicating relevance. Here is an example: Given website data: "
+            + json.dumps(example_website_data)
+            + " a possible classification is: "
+            + json.dumps(example_output),
         },
-        {
-            "role": "user",
-            "content": f"""
-            Title: {website_data.get('title', 'Not Provided')}
-            Meta Keywords: {website_data.get('meta_tags', {}).get('keywords', 'Not Provided')}
-            Meta Description: {website_data.get('meta_tags', {}).get('description', 'Not Provided')}
-            Content Preview: {website_data.get('content_preview', 'Not Provided')}
-            Links: {website_data.get('links', 'Not Provided')}
-            Additional Elements: {website_data.get('additional_elements', 'Not Provided')}
-
-            Categories: Arts, Business, Computers, Games, Health, Home, Kids_and_Teens, News, Recreation, Reference, Science, Shopping, Society, Sports.
-
-            Please classify the website into these categories, providing a binary classification (0 or 1) for each.
-            """,
-        },
+        {"role": "user", "content": json.dumps(website_data, ensure_ascii=False)},
     ]
-    messages_nice = "\n".join([f"    {message['content']}" for message in messages])
-    print(messages_nice)
-    print(f"Total number of characters in messages: {len(messages_nice)}")
-    completion = client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=messages, seed=42, max_tokens=100
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo-1106",
+        messages=messages,
+        seed=42,
+        max_tokens=200,
+        response_format={"type": "json_object"},
     )
-    return completion.choices[0].message.content
+    json_output = json.loads(response.choices[0].message.content)
+    return json_output
 
 
-def parse_classification_result(classification_str):
+def check_classification_format_json(classification_dict):
     """
-    Parses the classification result string into a dictionary.
-
-    Parameters:
-    classification_str (str): The classification result string.
-    categories (list): A list of categories to check in the classification result.
-
-    Returns:
-    dict: A dictionary with categories as keys and binary classification (0 or 1) as values.
-    """
-    lines = classification_str.strip().split("\n")
-    classification_dict = {}
-
-    for line in lines:
-        if ":" not in line:
-            print(f"Unexpected format in line: '{line}'")  # Logging the unexpected line
-            break
-        category, value = line.split(":")
-        category, value = category.strip(), value.strip()
-
-        if category in CATEGORIES and value in ["0", "1"]:
-            classification_dict[category] = int(value)
-        else:
-            print(f"Invalid format in classification result: '{line}'")
-
-    return classification_dict
-
-
-def check_classification_format(classification_dict):
-    """
-    Checks if all categories in the classification result are valid and have binary values.
-
-    Parameters:
-    classification_dict (dict): The classification dictionary.
-    categories (list): A list of valid categories.
-
-    Returns:
-    bool: True if the format is correct, False otherwise.
+    Checks if all categories in the classification result are valid and have binary values in JSON mode.
     """
     return all(
-        category in classification_dict and classification_dict[category] in [0, 1]
+        category in CATEGORIES and classification_dict.get(category) in [0, 1]
         for category in CATEGORIES
     )
 
@@ -185,7 +170,7 @@ def convert_to_full_url(url):
     )
 
 
-def calssify_and_validate(dataset, num_samples):
+def classify_and_validate(dataset, num_samples):
     """
     Processes a dataset to classify websites and generate predictions.
 
@@ -203,7 +188,7 @@ def calssify_and_validate(dataset, num_samples):
     for index, row in dataset.head(num_samples).iterrows():
         url = convert_to_full_url(row["Input.url"])
         try:
-            scraped_data = scrape_website(
+            scraped_data = parse_html(
                 url,
                 max_links=10,
                 max_sentences=20,
@@ -214,20 +199,20 @@ def calssify_and_validate(dataset, num_samples):
             scraped_data = None
 
         if scraped_data:
-            classification_str = classify_website(scraped_data)
-            result = parse_classification_result(classification_str)
+            classification_dict = classify_website(scraped_data)
 
-            if check_classification_format(result):
-                predictions.append([result[category] for category in CATEGORIES])
+            if check_classification_format_json(classification_dict):
+                predictions.append(
+                    [classification_dict[category] for category in CATEGORIES]
+                )
                 ids.append(index)
             else:
                 print(
-                    f"Format error in classification result for URL: {url}, result: {result}"
+                    f"Format error in classification result for URL: {url}, result: {classification_dict}"
                 )
                 failed_urls.append(url)
         else:
             failed_urls.append(url)
-
     predictions_df = pd.DataFrame(predictions, columns=CATEGORIES)
     predictions_df["Index"] = ids
     successful_df = dataset.loc[ids]
@@ -304,7 +289,7 @@ def scrape_websites_from_dataframe(
     for index, row in df.iterrows():
         url = row[url_column]
         try:
-            scraped_data = scrape_website(
+            scraped_data = parse_html(
                 url,
                 max_links,
                 max_sentences,
@@ -322,3 +307,108 @@ def scrape_websites_from_dataframe(
             print(f"Error scraping {url}: {e}")
 
     return df
+
+
+def fetch_url_data(df, url_column):
+    # Add new columns to the DataFrame
+    df["Response Status"] = None
+    df["Redirected URL"] = None
+    df["Response Text"] = None
+
+    # Iterate through each row
+    for index, row in df.iterrows():
+        try:
+            url = row[url_column]
+            url = convert_to_full_url(url)
+            response = requests.get(url, allow_redirects=True)
+
+            # Update the DataFrame with the response details
+            df.at[index, "Response Status"] = response.status_code
+            df.at[index, "Redirected URL"] = response.url
+            df.at[index, "Response Text"] = response.text
+        except Exception as e:
+            print(f"Error fetching data for URL {url}: {e}")
+
+    return df
+
+
+def classify(dataset, num_samples):
+    predictions = []
+    ids = []
+    failed_urls = []
+
+    for index, row in dataset.head(num_samples).iterrows():
+        url = convert_to_full_url(row["Input.url"])
+        try:
+            scraped_data = parse_html(
+                row,
+                "Response Text",
+                max_links=10,
+                max_sentences=20,
+                meta_tags=["description", "keywords"],
+            )
+            print(scraped_data)
+        except Exception as e:
+            print(f"Error scraping URL: {url}, error: {e}")
+            scraped_data = None
+
+        if scraped_data:
+            classification_dict = classify_website(scraped_data)
+
+            if check_classification_format_json(classification_dict):
+                predictions.append(
+                    [classification_dict[category] for category in CATEGORIES]
+                )
+                ids.append(index)
+            else:
+                print(
+                    f"Format error in classification result for URL: {url}, result: {classification_dict}"
+                )
+                failed_urls.append(url)
+        else:
+            failed_urls.append(url)
+    predictions_df = pd.DataFrame(predictions, columns=CATEGORIES)
+    predictions_df["Index"] = ids
+    successful_df = dataset.loc[ids]
+    report = classification_report(
+        successful_df[CATEGORIES], predictions_df[CATEGORIES], target_names=CATEGORIES
+    )
+    return predictions_df, failed_urls, report
+
+
+def parse_html(
+    row,
+    column,
+    max_links=None,
+    max_sentences=None,
+    meta_tags=None,
+    html_elements=None,
+):
+    response = row[column]
+    if response is None:
+        return None
+    soup = BeautifulSoup(response, "html.parser")
+
+    links = {a.text: a["href"] for a in soup.find_all("a", href=True)}
+    meta_tags = {
+        meta["name"]: meta["content"]
+        for meta in soup.find_all("meta")
+        if meta.get("name") and (not meta_tags or meta["name"] in meta_tags)
+    }
+    sentences = re.split(r"(?<=[.!?])\s+", " ".join(soup.stripped_strings))
+    elements = (
+        {element: soup.find_all(element) for element in html_elements}
+        if html_elements
+        else {}
+    )
+
+    return {
+        "url": row['Input.url'],
+        "title": soup.title.string if soup.title else None,
+        "links": list(links.items())[:max_links],
+        "meta_tags": meta_tags,
+        "content_preview": " ".join(sentences[:max_sentences])
+        if max_sentences
+        else " ".join(sentences),
+        "additional_elements": elements,
+    }
