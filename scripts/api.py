@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from sklearn.metrics import classification_report
+from urllib.parse import urlparse
+
 
 client = OpenAI()
 
@@ -233,3 +235,90 @@ def calssify_and_validate(dataset, num_samples):
         successful_df[CATEGORIES], predictions_df[CATEGORIES], target_names=CATEGORIES
     )
     return predictions_df, failed_urls, report
+
+
+def check_website(url, min_content_length=100):
+    try:
+        url = convert_to_full_url(url)
+        response = requests.get(url, timeout=5)
+
+        # Check for redirect
+        final_domain = urlparse(response.url).netloc
+        original_domain = urlparse(url).netloc
+        if final_domain != original_domain:
+            return False, f"{url} redirected from the website"
+
+        # Check for 404 Not Found
+        if response.status_code == 404:
+            return False, f"{url} is a 404"
+
+        # Parse content
+        soup = BeautifulSoup(response.content, "html.parser")
+        text_content = soup.get_text().strip()
+
+        # Check content length
+        if len(text_content) < min_content_length:
+            return (
+                False,
+                f"{url} has less content than the minimum required ({min_content_length} characters)",
+            )
+
+        return True, f"Website looks good"
+    except requests.RequestException as e:
+        return False, f"{url} raised an exception: {e}"
+
+
+def scrape_websites_from_dataframe(
+    df,
+    url_column,
+    max_links=None,
+    max_sentences=None,
+    user_agent=None,
+    timeout=10,
+    meta_tags=None,
+    html_elements=None,
+):
+    """
+    Iterates through a DataFrame and scrapes content from URLs in a specified column.
+
+    Parameters:
+    df (DataFrame): The DataFrame containing URLs.
+    url_column (str): The column name in the DataFrame where URLs are stored.
+    max_links, max_sentences, user_agent, timeout, meta_tags, html_elements: Parameters to pass to scrape_website.
+
+    Returns:
+    DataFrame: The original DataFrame with additional columns for scraped content.
+    """
+    # Ensure the URL column exists in the DataFrame
+    if url_column not in df.columns:
+        raise ValueError(f"Column '{url_column}' not found in DataFrame")
+
+    # Initialize columns for scraped data
+    df["Title"] = None
+    df["Links"] = None
+    df["Meta Tags"] = None
+    df["Content Preview"] = None
+    df["Additional Elements"] = None
+
+    # Iterate over the DataFrame
+    for index, row in df.iterrows():
+        url = row[url_column]
+        try:
+            scraped_data = scrape_website(
+                url,
+                max_links,
+                max_sentences,
+                user_agent,
+                timeout,
+                meta_tags,
+                html_elements,
+            )
+            df.at[index, "Title"] = scraped_data["title"]
+            df.at[index, "Links"] = scraped_data["links"]
+            df.at[index, "Meta Tags"] = scraped_data["meta_tags"]
+            df.at[index, "Content Preview"] = scraped_data["content_preview"]
+            df.at[index, "Additional Elements"] = scraped_data["additional_elements"]
+        except Exception as e:
+            print(f"Error scraping {url}: {e}")
+
+    return df
