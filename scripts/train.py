@@ -7,12 +7,12 @@ from typing import List
 import hydra
 import lightning as L
 import rootutils
+import wandb
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
 import ml_project_2_mlp.utils as utils
-import wandb
 from ml_project_2_mlp.logger import RankedLogger
 
 # Setup root environment
@@ -73,10 +73,14 @@ def main(cfg: DictConfig):
         utils.log_hyperparameters(setup_dict)
 
     # Train model
-    log.info("Starting training!")
-    trainer.fit(model=model, datamodule=datamodule)
+    if cfg.finetune:
+        log.info("Starting training!")
+        trainer.fit(model=model, datamodule=datamodule)
 
-    train_metrics = trainer.callback_metrics
+        train_metrics = trainer.callback_metrics
+    else:
+        train_metrics = {}
+        log.info("Skipping finetuning!")
 
     # Test model if specified
     if cfg.get("test"):
