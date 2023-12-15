@@ -36,31 +36,39 @@ class GPTLabeler:
 
         # System prompt
         self.example_website_data = {
-            "title": "Example Title",
-            "meta_tags": {
-                "keywords": "example, sample",
-                "description": "An example website",
-            },
-            "content_preview": "Sample content from the website",
-            "links": ["http://example.com/link1", "http://example.com/link2"],
-            "additional_elements": "Example additional HTML elements",
+            "title": "The New York Times - Breaking News, World News & Multimedia",
+            "description": "Find breaking news, multimedia, reviews & opinion on Washington, business, sports, movies, travel, books, jobs, education, real estate, cars & more.",
+            "keywords": ["breaking news", "world news", "politics", "economy", "sports", "arts", "movies", "travel", "books", "education", "real estate", "cars"],
+            "links": [
+                "http://nytimes.com/breaking-news",
+                "http://nytimes.com/world-news",
+                "http://nytimes.com/business",
+                "http://nytimes.com/sports",
+                "http://nytimes.com/arts",
+                "http://nytimes.com/travel"
+            ],
+            "tld": "com",
+            "domain": "nytimes.com",
+            "metatags": ["NYT", "news", "current events", "global news", "media"],
         }
+        # Construct the example website data
+        self._construt_example()
 
         self.example_output = {
-            "Arts": 0,
-            "Business": 0,
-            "Computers": 1,
+            "Arts": 1,
+            "Business": 1,
+            "Computers": 0,
             "Games": 0,
-            "Health": 0,
+            "Health": 1,
             "Home": 0,
             "Kids_and_Teens": 0,
-            "News": 0,
+            "News": 1,
             "Recreation": 0,
-            "Reference": 1,
-            "Science": 0,
+            "Reference": 0,
+            "Science": 1,
             "Shopping": 0,
-            "Society": 0,
-            "Sports": 0,
+            "Society": 1,
+            "Sports": 1,
         }
 
         self.system_prompt = {
@@ -68,9 +76,18 @@ class GPTLabeler:
             "content": "You are an assistant skilled in website classification using HTML content. \
                 Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as \
                 keys and binary values (0 or 1) indicating relevance. Here is an example: Given website data: "
-            + json.dumps(self.example_website_data)
+            + json.dumps(self.example)
             + " a possible classification is: "
             + json.dumps(self.example_output),
+        }
+
+    def _construt_example(self):
+        """
+        Constructs the example website data.
+        """
+        self.example = {
+            feature: self.example_website_data[feature]
+            for feature, count in self.features
         }
 
     def _downsample_features(self, websites_feat: list[dict]) -> list[dict]:
