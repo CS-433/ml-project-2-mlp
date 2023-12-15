@@ -22,10 +22,12 @@ class GPT:
         X_new = []
         for website in X:
             new_value = {}
-            new_value["id"] = website["id"]
+            new_value["wid"] = website["wid"]
             for feature, count in self.features:
                 if count is not None:
-                    new_value[feature] = website[feature][:count]
+                    # make it resilient to None and list length
+                    if website[feature] is not None:
+                        new_value[feature] = website[feature][:min(count, len(website[feature]))]
                 else:
                     new_value[feature] = website[feature]
             X_new.append(new_value)
@@ -37,27 +39,13 @@ class GPT:
             self.predictions = []
 
         for website in X:
-            features = [website[feature] for feature, _ in self.features]
-            prediction, error = self._classify_single_website(features)
+            features = {feature : website[feature] for feature, _ in self.features if feature in website}
+            prediction, error, messages = self._classify_single_website(features)
             self.predictions.append(
-                {"id": website["id"], "prediction": prediction, "error": error}
+                {"wid": website["wid"], "prediction": prediction, "error": error, "messages": messages}
             )
         return self.predictions
 
-    def validate(self, Y_actual):
-        if self.predictions is None:
-            raise ValueError("No predictions found. Run predict method first.")
-        # get df from a list of dicts
-        predictions_df = pd.DataFrame(self.predictions)
-        predictions_df = predictions_df[predictions_df["error"].isna()]
-        categories_df = pd.DataFrame(
-            predictions_df["prediction"].tolist(),
-            index=predictions_df.id,
-            columns=self.categories,
-        )
-        Y_actual = Y_actual.loc[predictions_df.index]
-        report = classification_report(Y_actual[self.categories], categories_df)
-        return report
 
     def _classify_single_website(self, website_data):
         example_website_data = {
@@ -110,9 +98,9 @@ class GPT:
         json_output = json.loads(response.choices[0].message.content)
         valid_format = self._check_format(json_output)
         if valid_format:
-            return [json_output[category] for category in self.categories], None
+            return [json_output[category] for category in self.categories], None, messages
         else:
-            return None, "Invalid format"
+            return None, "Invalid format", messages
 
     def _check_format(self, classification_dict):
         """

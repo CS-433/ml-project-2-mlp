@@ -25,12 +25,14 @@ import pandas as pd
 import rich
 import rich.syntax
 import rich.tree
+from sklearn.metrics import classification_report
 import torch
 from bs4 import BeautifulSoup as Soup
 from lightning import Callback
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig, OmegaConf
 from tld import get_tld
+from torchmetrics import Accuracy, F1Score, Precision, Recall
 
 log = logging.Logger(__name__)
 
@@ -728,3 +730,56 @@ def parse_url(url: str) -> dict:
     domain = url_info.domain
 
     return {"tld": tld, "domain": domain}
+
+
+def validation_report(prediction, actual, categories):
+    """
+    Generate a validation report from the predictions and the actual labels
+
+    Args:
+        prediction: List of predictions
+        actual: List of actual labels
+
+    Returns:
+        A classification report
+    """
+    # Get df from a list of dicts
+    actual, categories_df = _allign_dataframes(prediction, actual, categories)
+    report = classification_report(
+        actual[categories], categories_df, target_names=categories
+    )
+    return report
+
+
+def _allign_dataframes(prediction, actual, categories):
+    predictions_df = pd.DataFrame(prediction)
+    predictions_df = predictions_df[predictions_df["error"].isna()]
+    categories_df = pd.DataFrame(
+        predictions_df["prediction"].tolist(),
+        index=predictions_df["wid"],
+        columns=categories,
+    )
+    actual = actual.loc[predictions_df.index]
+    return actual, categories_df
+
+
+def compute_metrics(
+    actual_labels: pd.DataFrame, predictions: List[Dict], categories: List[str]
+):
+    actual, categories_df = _allign_dataframes(predictions, actual_labels, categories)
+    y_true = torch.tensor(actual[categories].values)
+    y_pred = torch.tensor(categories_df.values)
+
+    accuracy = Accuracy(task = 'multiclass', num_classes=len(categories))
+    precision = Precision(task= 'multiclass', num_classes=len(categories), average='weighted')
+    recall = Recall(task = 'multiclass',num_classes=len(categories), average='weighted')
+    f1 = F1Score(task = 'multiclass', num_classes=len(categories), average='weighted')
+
+    # Compute metrics
+    metrics = {
+        "accuracy": accuracy(y_pred, y_true),
+        "precision": precision(y_pred, y_true),
+        "recall": recall(y_pred, y_true),
+        "f1": f1(y_pred, y_true),
+    }   
+    return metrics
