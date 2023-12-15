@@ -12,6 +12,7 @@ import gzip
 import json
 import logging
 import os
+import pickle
 import re
 import shutil
 import warnings
@@ -475,6 +476,8 @@ def _read_file(file_path: str):
             return _read_csv(file_path)
         case "pt":
             return _read_torch(file_path)
+        case "pkl":
+            return _read_pickle(file_path)
         case _:
             raise ValueError(f"Unknown file extension: {file_extension}")
 
@@ -531,6 +534,20 @@ def _read_torch(file_path: str) -> torch.nn.Module:
         model: torch.nn.Module
     """
     return torch.load(file_path, map_location=torch.device("cpu"))
+
+
+def _read_pickle(file_path: str) -> Any:
+    """
+    Reads a pickle file and returns the object.
+
+    Args:
+        file_path: Path to the pickle file.
+
+    Returns:
+        object: Object contained in the pickle file.
+    """
+    with open(file_path, "rb") as f:
+        return pickle.load(f)
 
 
 def _read_class_vector(file_path: str) -> dict:
