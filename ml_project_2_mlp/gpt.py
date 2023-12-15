@@ -136,18 +136,20 @@ class GPTLabeler:
 
         # Classify websites
         predictions = []
-        for website in tqdm(websites_feat_reduced):
-            # Get the features of the website based on the provided context features
-            features = {feat: website[feat] for feat, _ in self.features}
+        try:
+            for website in tqdm(websites_feat_reduced):
+                # Get the features of the website based on the provided context features
+                features = {feat: website[feat] for feat, _ in self.features}
 
-            # Classify the website
-            pred = self._classify_single_website(features)
-            pred["wid"] = website["wid"]
+                # Classify the website
+                pred = self._classify_single_website(features)
+                pred["wid"] = website["wid"]
 
-            # Save the prediction
-            predictions.append(pred)
-
-        return predictions
+                # Save the prediction
+                predictions.append(pred)
+        except Exception as e:
+            print(e)
+            return predictions
 
     def _check_format(self, output: dict) -> tuple[bool, str]:
         """
