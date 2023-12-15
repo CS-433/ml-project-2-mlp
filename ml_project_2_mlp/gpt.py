@@ -53,12 +53,12 @@ class GPTLabeler:
                 "cars",
             ],
             "links": [
-                "http://nytimes.com/breaking-news",
-                "http://nytimes.com/world-news",
-                "http://nytimes.com/business",
-                "http://nytimes.com/sports",
-                "http://nytimes.com/arts",
-                "http://nytimes.com/travel",
+                "breaking-news",
+                "world-news",
+                "business",
+                "sports",
+                "arts",
+                "travel",
             ],
             "tld": "com",
             "domain": "nytimes.com",
@@ -172,9 +172,12 @@ class GPTLabeler:
 
                 # Save the prediction
                 predictions.append(pred)
+
         except Exception as e:
             print(e)
             return predictions
+
+        return predictions
 
     def _check_format(self, output: dict) -> tuple[bool, str]:
         """
