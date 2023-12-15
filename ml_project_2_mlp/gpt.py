@@ -5,6 +5,24 @@ from tqdm import tqdm
 
 
 class GPTLabeler:
+    # Categories for prediction
+    categories = [
+        "Arts",
+        "Business",
+        "Computers",
+        "Games",
+        "Health",
+        "Home",
+        "Kids_and_Teens",
+        "News",
+        "Recreation",
+        "Reference",
+        "Science",
+        "Shopping",
+        "Society",
+        "Sports",
+    ]
+
     def __init__(self, client: OpenAI, features: list[tuple[str, int]]):
         """
         Args:
@@ -15,24 +33,6 @@ class GPTLabeler:
         #  User defined attributes
         self.client = client
         self.features = features
-
-        # Categories for prediction
-        self.categories = [
-            "Arts",
-            "Business",
-            "Computers",
-            "Games",
-            "Health",
-            "Home",
-            "Kids_and_Teens",
-            "News",
-            "Recreation",
-            "Reference",
-            "Science",
-            "Shopping",
-            "Society",
-            "Sports",
-        ]
 
         # System prompt
         self.example_website_data = {
@@ -133,7 +133,7 @@ class GPTLabeler:
         for website_feat in websites_feat:
             # Go over the features and downsample them if count is specified
             for feature, count in self.features:
-                if count is not None:
+                if count is not None and website_feat[feature]:
                     max_count = min(count, len(website_feat[feature]))
                     website_feat[feature] = website_feat[feature][:max_count]
 
