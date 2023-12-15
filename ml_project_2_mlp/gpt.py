@@ -1,66 +1,40 @@
 import json
-from typing import Dict, List, Tuple
-from urllib.parse import urlparse
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
+
 from openai import OpenAI
-from sklearn.metrics import classification_report
 
 
-class GPT:
-    def __init__(
-        self, categories: List[str], client: OpenAI, features: List[Tuple[str, int]]
-    ):
-        self.categories = categories
+class GPTLabeler:
+    def __init__(self, client: OpenAI, features: list[tuple[str, int]]):
+        """
+        Args:
+            client (OpenAI): OpenAI client object.
+            features (list[tuple[str, int]]): List of tuples of features and their downsampled count.
+        """
+
+        #  User defined attributes
         self.client = client
-        self.predictions = None
         self.features = features
 
-    def _downsample_features(self, X: list[Dict]):
-        # is a dict of dicts that have the feature keys
-        X_new = []
-        for website in X:
-            new_value = {}
-            new_value["id"] = website["id"]
-            for feature, count in self.features:
-                if count is not None:
-                    new_value[feature] = website[feature][:count]
-                else:
-                    new_value[feature] = website[feature]
-            X_new.append(new_value)
-        return X_new
+        # Categories for prediction
+        self.categories = [
+            "Arts",
+            "Business",
+            "Computers",
+            "Games",
+            "Health",
+            "Home",
+            "Kids_and_Teens",
+            "News",
+            "Recreation",
+            "Reference",
+            "Science",
+            "Shopping",
+            "Society",
+            "Sports",
+        ]
 
-    def predict(self, X: list[Dict]):
-        X = self._downsample_features(X)
-        if not self.predictions:
-            self.predictions = []
-
-        for website in X:
-            features = [website[feature] for feature, _ in self.features]
-            prediction, error = self._classify_single_website(features)
-            self.predictions.append(
-                {"id": website["id"], "prediction": prediction, "error": error}
-            )
-        return self.predictions
-
-    def validate(self, Y_actual):
-        if self.predictions is None:
-            raise ValueError("No predictions found. Run predict method first.")
-        # get df from a list of dicts
-        predictions_df = pd.DataFrame(self.predictions)
-        predictions_df = predictions_df[predictions_df["error"].isna()]
-        categories_df = pd.DataFrame(
-            predictions_df["prediction"].tolist(),
-            index=predictions_df.id,
-            columns=self.categories,
-        )
-        Y_actual = Y_actual.loc[predictions_df.index]
-        report = classification_report(Y_actual[self.categories], categories_df)
-        return report
-
-    def _classify_single_website(self, website_data):
-        example_website_data = {
+        # System prompt
+        self.example_website_data = {
             "title": "Example Title",
             "meta_tags": {
                 "keywords": "example, sample",
@@ -71,7 +45,7 @@ class GPT:
             "additional_elements": "Example additional HTML elements",
         }
 
-        example_output = {
+        self.example_output = {
             "Arts": 0,
             "Business": 0,
             "Computers": 1,
@@ -88,37 +62,143 @@ class GPT:
             "Sports": 0,
         }
 
+        self.system_prompt = {
+            "role": "system",
+            "content": "You are an assistant skilled in website classification using HTML content. \
+                Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as \
+                keys and binary values (0 or 1) indicating relevance. Here is an example: Given website data: "
+            + json.dumps(self.example_website_data)
+            + " a possible classification is: "
+            + json.dumps(self.example_output),
+        }
+
+    def _downsample_features(self, websites_feat: list[dict]) -> list[dict]:
+        """
+        Downsamples the features of the websites to the specified count.
+
+        E.g. We have 100 links and the count is 10. We will only use the first 10 links.
+
+        Args:
+            websites_feat (list[dict]): List of website data dictionaries including websites to classify with their features.
+
+        Returns:
+            websites_feat_reduced (list[dict]): List of website data dictionaries including websites to classify with their features downsampled to the specified count.
+        """
+
+        # Go over the websites and downsample their features
+        websites_feat_reduced = []
+        for website_feat in websites_feat:
+            # Go over the features and downsample them if count is specified
+            for feature, count in self.features:
+                if count is not None:
+                    max_count = min(count, len(website_feat[feature]))
+                    websites_feat[feature] = website_feat[feature][:max_count]
+
+            # Save the downsampled website
+            websites_feat_reduced.append(website_feat)
+
+        return websites_feat_reduced
+
+    def predict(self, websites_feat: list[dict]) -> list[dict]:
+        """
+        Args:
+            websites_feat (list[dict]): List of website data dictionaries including websites to classify with their features.
+
+        Returns:
+            predictions (list[dict]): List of dictionaries with the classification results, namely the keys in each dict are:
+                - input: The input website data.
+                - output: The classification output.
+                - is_valid: Whether the classification output is valid.
+                - reason_invalid: Reason why the classification output is invalid.
+                - wid: The website id.
+        """
+
+        # Downsample features - if count is None, do not downsample
+        websites_feat_reduced = self._downsample_features(websites_feat)
+
+        # Classify websites
+        predictions = []
+        for website in websites_feat_reduced:
+            # Get the features of the website based on the provided context features
+            features = {feat: website[feat] for feat in self.features}
+
+            # Classify the website
+            pred = self._classify_single_website(features) + {"wid": website["wid"]}
+
+            # Save the prediction
+            predictions.append(pred)
+
+        return predictions
+
+    def _check_format(self, output: dict) -> tuple[bool, str]:
+        """
+        Checks if the output is in the correct format.
+
+        Args:
+            output (dict): Dictionary with the classification results.
+
+        Returns:
+            is_valid (bool): Whether the output is in the correct format.
+            reason_invalid (str): Reason why the output is not in the correct format.
+        """
+
+        # Returned valid categories
+        all_valid = all(category in self.categories for category in output.keys())
+        if not all_valid:
+            return False, "Invalid categories"
+
+        # Check if all values are binary
+        all_binary = all(value in [0, 1] for value in output.values())
+        if not all_binary:
+            return False, "Non-binary values"
+
+        return True, None
+
+    def _classify_single_website(self, website_data: dict) -> dict:
+        """
+        Classifies a single website.
+
+        Args:
+            website_data (dict): Dictionary with the website data.
+
+        Returns:
+            output (dict): Dictionary with the classification results.
+        """
+
+        # Parse the input into json
+        content = json.dumps(website_data, ensure_ascii=False)
+
+        # Define the messages to send to the API
         messages = [
-            {
-                "role": "system",
-                "content": "You are an assistant skilled in website classification using HTML content. Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as keys and binary values (0 or 1) indicating relevance. Here is an example: Given website data: "
-                + json.dumps(example_website_data)
-                + " a possible classification is: "
-                + json.dumps(example_output),
-            },
-            {"role": "user", "content": json.dumps(website_data, ensure_ascii=False)},
+            self.system_prompt,
+            {"role": "user", "content": content},
         ]
-        print(type(website_data))
-        print(website_data)
+
+        # Send the messages to the API
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             messages=messages,
-            seed=42,
+            seed=42,  # For reproducibility
             max_tokens=200,
             response_format={"type": "json_object"},
         )
-        json_output = json.loads(response.choices[0].message.content)
-        valid_format = self._check_format(json_output)
-        if valid_format:
-            return [json_output[category] for category in self.categories], None
-        else:
-            return None, "Invalid format"
 
-    def _check_format(self, classification_dict):
-        """
-        Checks if all categories in the classification result are valid and have binary values in JSON mode.
-        """
-        return all(
-            category in self.categories and classification_dict.get(category) in [0, 1]
-            for category in self.categories
-        )
+        # Parse the response
+        json_output = json.loads(response.choices[0].message.content)
+        is_valid, reason_invalid = self._check_format(json_output)
+
+        # If valid format, one hot encode the categories
+        if is_valid:
+            preds = [json_output[category] for category in self.categories]
+        else:
+            preds = [0] * len(self.categories)
+
+        # Construct the output
+        output = {
+            "input": website_data,
+            "output": preds,
+            "is_valid": is_valid,
+            "reason_invalid": reason_invalid,
+        }
+
+        return output

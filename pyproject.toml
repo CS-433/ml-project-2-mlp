@@ -34,6 +34,7 @@ hydra-colorlog = "^1.2.0"
 hydra-optuna-sweeper = "^1.2.0"
 tld = "^0.13"
 bleach = "^6.1.0"
+openai = "^1.4.0"
 
 [tool.poetry.scripts]
 train = 'scripts.train:main'
