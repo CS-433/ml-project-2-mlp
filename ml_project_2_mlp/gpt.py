@@ -1,6 +1,7 @@
 import json
 
 from openai import OpenAI
+from tqdm import tqdm
 
 
 class GPTLabeler:
@@ -92,7 +93,7 @@ class GPTLabeler:
             for feature, count in self.features:
                 if count is not None:
                     max_count = min(count, len(website_feat[feature]))
-                    websites_feat[feature] = website_feat[feature][:max_count]
+                    website_feat[feature] = website_feat[feature][:max_count]
 
             # Save the downsampled website
             websites_feat_reduced.append(website_feat)
@@ -118,12 +119,13 @@ class GPTLabeler:
 
         # Classify websites
         predictions = []
-        for website in websites_feat_reduced:
+        for website in tqdm(websites_feat_reduced):
             # Get the features of the website based on the provided context features
-            features = {feat: website[feat] for feat in self.features}
+            features = {feat: website[feat] for feat, _ in self.features}
 
             # Classify the website
-            pred = self._classify_single_website(features) + {"wid": website["wid"]}
+            pred = self._classify_single_website(features)
+            pred["wid"] = website["wid"]
 
             # Save the prediction
             predictions.append(pred)
