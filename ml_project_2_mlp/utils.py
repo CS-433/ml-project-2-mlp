@@ -67,18 +67,18 @@ def extras(cfg: DictConfig) -> None:
 
 
 def print_config_tree(
-    cfg: DictConfig,
-    print_order: Sequence[str] = (
-        "data",
-        "model",
-        "callbacks",
-        "logger",
-        "trainer",
-        "paths",
-        "extras",
-    ),
-    resolve: bool = False,
-    save_to_file: bool = False,
+        cfg: DictConfig,
+        print_order: Sequence[str] = (
+                "data",
+                "model",
+                "callbacks",
+                "logger",
+                "trainer",
+                "paths",
+                "extras",
+        ),
+        resolve: bool = False,
+        save_to_file: bool = False,
 ) -> None:
     """
     Prints the contents of a DictConfig as a tree structure using the Rich library.
@@ -122,7 +122,7 @@ def print_config_tree(
 
 
 def get_metric_value(
-    metric_dict: Dict[str, Any], metric_name: Optional[str]
+        metric_dict: Dict[str, Any], metric_name: Optional[str]
 ) -> Optional[float]:
     """
     Safely retrieves value of the metric logged in LightningModule.
@@ -288,7 +288,7 @@ def load(dir_path: str, expected_files: list[str]):
 
 
 def download_if_not_present(
-    dir_path: str, expected_files: list[str], gdrive_url: str
+        dir_path: str, expected_files: list[str], gdrive_url: str
 ) -> None:
     """
     Downloads the data/ model from Google Drive if not present in
@@ -728,3 +728,56 @@ def parse_url(url: str) -> dict:
     domain = url_info.domain
 
     return {"tld": tld, "domain": domain}
+
+
+def validation_report(prediction, actual, categories):
+    """
+    Generate a validation report from the predictions and the actual labels
+
+    Args:
+        prediction: List of predictions
+        actual: List of actual labels
+
+    Returns:
+        A classification report
+    """
+    # Get df from a list of dicts
+    actual, categories_df = _allign_dataframes(prediction, actual, categories)
+    report = classification_report(
+        actual[categories], categories_df, target_names=categories
+    )
+    return report
+
+
+def _allign_dataframes(prediction, actual, categories):
+    predictions_df = pd.DataFrame(prediction)
+    predictions_df = predictions_df[predictions_df["error"].isna()]
+    categories_df = pd.DataFrame(
+        predictions_df["prediction"].tolist(),
+        index=predictions_df["wid"],
+        columns=categories,
+    )
+    actual = actual.loc[predictions_df.index]
+    return actual, categories_df
+
+
+def compute_metrics(
+        actual_labels: pd.DataFrame, predictions: List[Dict], categories: List[str]
+):
+    actual, categories_df = _allign_dataframes(predictions, actual_labels, categories)
+    y_true = torch.tensor(actual[categories].values)
+    y_pred = torch.tensor(categories_df.values)
+
+    accuracy = Accuracy(task='multiclass', num_classes=len(categories))
+    precision = Precision(task='multiclass', num_classes=len(categories), average='weighted')
+    recall = Recall(task='multiclass', num_classes=len(categories), average='weighted')
+    f1 = F1Score(task='multiclass', num_classes=len(categories), average='weighted')
+
+    # Compute metrics
+    metrics = {
+        "accuracy": accuracy(y_pred, y_true),
+        "precision": precision(y_pred, y_true),
+        "recall": recall(y_pred, y_true),
+        "f1": f1(y_pred, y_true),
+    }
+    return metrics
