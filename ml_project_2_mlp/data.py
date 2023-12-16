@@ -2,11 +2,14 @@ import os
 import pickle
 from urllib.parse import urlparse
 
+import numpy as np
 import pandas as pd
-import utils
 from bs4 import BeautifulSoup as Soup
 from tld import get_tld
 from tqdm import tqdm
+
+from ml_project_2_mlp import utils as utils
+from ml_project_2_mlp.homepage2vec.model import WebsiteClassifier
 
 
 class WebsiteData:
@@ -17,10 +20,14 @@ class WebsiteData:
     produce a processed dataset (scrape, parse, embed
     """
 
-    def __init__(self, name: str, data_dir: str):
+    def __init__(self, name: str, data_dir: str, model_path: str):
         # User defined attributes
         self.name = name
         self.data_dir = data_dir
+        self.model_path = model_path
+
+        # Init the embedder model
+        self.embedder = WebsiteClassifier(self.model_path)
 
         # Load raw, scraped, processed and embed data
         self.raw_data = self._load_raw_data()
@@ -28,11 +35,12 @@ class WebsiteData:
         self.proccessed_data = self._process_data()
         self.embedded_data = self._embed_data()
 
+    # ----------- Getters
     def get_raw_data(self):
         return self.raw_data
 
     def get_processed_data(self):
-        return self.processed_data
+        return self.proccessed_data
 
     def get_embeddings(self):
         return self.embedded_data
@@ -53,7 +61,7 @@ class WebsiteData:
         return urls
 
     # ----------- Scraping
-    def _scrape_data(self):
+    def _scrape_data(self) -> dict:
         """
         Scrape the raw website data and for each website save the following info:
         - wid: Unique identifier of the website
@@ -62,20 +70,26 @@ class WebsiteData:
         - html: Raw HTML of the website
         - redirect_url: URL of the website after redirect (if any)
         - original_url: Original URL of the website (before redirect)
+
+        Returns:
+            A dictionary containing the scraped data.
         """
 
         # Define the path where the scraped data will be/are saved
-        store_path = os.path.join(self.data_dir, "features", self.name, "scraped.pkl")
+        dir_path = os.path.join(self.data_dir, "features", self.name)
+        store_path = os.path.join(dir_path, "scraped.pkl")
+        os.makedirs(dir_path, exist_ok=True)
 
         # Check if the scraped data already exists -> if not scrape, else load
         if not os.path.exists(store_path):
-            websites = []
+            websites = dict()
             for _, row in tqdm(self.raw_data.iterrows(), total=len(self.raw_data)):
                 # Get the website content
-                result = self._get_website(row["url"], row["wid"])
+                result = self._get_website(row["url"])
+                wid = row["wid"]
 
-                # Add to list
-                websites.append(result)
+                # Store the result
+                websites[wid] = result
 
             # Save the scraped data to disk
             with open(store_path, "wb") as f:
@@ -88,20 +102,29 @@ class WebsiteData:
         return websites
 
     @staticmethod
-    def _is_valid_website(get_code, content_type):
+    def _is_valid_website(get_code: int, content_type: str) -> bool:
+        """
+        Check whether a website is valid. A website is valid if the HTTP response code is 200
+
+        Args:
+            get_code: HTTP response code
+            content_type: Content type of the website
+
+        Returns:
+            True if the website is valid, False otherwise.
+        """
         valid_get_code = get_code == 200
         valid_content_type = content_type.startswith("text/html")
         return valid_get_code and valid_content_type
 
     @staticmethod
-    def _get_website(self, url, wid, timeout=10):
+    def _get_website(self, url: str, timeout: int = 10) -> dict:
         """
         Get raw website content with additional meta info (e.g. response code, content type, etc.))
         for a given URL.
 
         Args:
             url: URL of the website
-            wid: Unique identifier of the website
             timeout: Timeout in seconds
 
         Returns:
@@ -113,7 +136,6 @@ class WebsiteData:
 
         # Save the response to dict
         result = {
-            "wid": wid,
             "http_code": None,
             "is_valid": False,
             "html": None,
@@ -148,7 +170,7 @@ class WebsiteData:
         return result
 
     # ----------- Processing
-    def _process_data(self) -> list[dict]:
+    def _process_data(self) -> dict:
         """
         Process the html and url raw data into useful features.
 
@@ -156,7 +178,9 @@ class WebsiteData:
             web_features : list of dicts where each dict includes the needed info
         """
         # Store path
-        store_path = os.path.join(self.data_dir, "features", self.name, "processed.pkl")
+        dir_path = os.path.join(self.data_dir, "features", self.name)
+        store_path = os.path.join(dir_path, "processed.pkl")
+        os.makedirs(dir_path, exist_ok=True)
 
         # Check if the processed data already exists -> if not process, else load
         if not os.path.exists(store_path):
@@ -164,7 +188,7 @@ class WebsiteData:
             valid_webs = pd.DataFrame([w for w in self.scraped_data if w["is_valid"]])
 
             # Save the features
-            web_features = []
+            web_features = dict()
 
             for i in tqdm(range(len(valid_webs))):
                 # Get html
@@ -178,15 +202,16 @@ class WebsiteData:
                 )
 
                 # Get id
-                wid = {"wid": valid_webs.iloc[i]["wid"]}
+                wid = valid_webs.iloc[i]["wid"]
 
                 # Get features
                 html_features = self._parse_html(html)
                 url_features = self._parse_url(url)
-                features = {**html_features, **url_features, **wid}
+                features = {**html_features, **url_features}
 
                 # Save the features
-                web_features.append(features)
+                web_features[wid] = features
+
         else:
             with open(store_path, "rb") as f:
                 web_features = pickle.load(f)
@@ -243,11 +268,13 @@ class WebsiteData:
         # Extract site keywords
         kw = soup.find("meta", attrs={"name": "keywords"})
         if not kw:
-            kw = None
+            kw = []
         else:
             kw = kw.get("content", "")
             if len(kw.strip()) == 0:
-                kw = None
+                kw = []
+            else:
+                kw = [k.strip() for k in kw.split(" ")]
 
         # Extract site links
         a_tags = soup.find_all("a", href=True)
@@ -256,12 +283,12 @@ class WebsiteData:
         links = [link for link in links if len(link) != 0]
         links = [w.lower() for w in " ".join(links).split(" ") if len(w) != 0]
         if len(links) == 0:
-            links = None
+            links = []
 
         # Extract text
         sentences = utils.split_in_sentences(soup)
         if len(sentences) == 0:
-            sentences = None
+            sentences = []
 
         # Return the extracted features
         return {
@@ -298,6 +325,69 @@ class WebsiteData:
 
         return {"tld": tld, "domain": domain}
 
-    # ----------- Embedding
-    def _embed_data(self):
-        pass
+    # ----------- Embeddings
+    def _embed_data(self) -> dict:
+        """
+        Embed the processed data.
+
+        Returns:
+            A dictionary containing the embedded data.
+        """
+        # Ensure the dir path exists, and init the store path
+        dir_path = os.path.join(self.data_dir, "features", self.name)
+        store_path = os.path.join(dir_path, "embeddings.pkl")
+        os.makedirs(dir_path, exist_ok=True)
+
+        # Check if the embeddings already exist -> if not embed, else load
+        if not os.path.exists(store_path):
+            embeddings = dict()
+            for web in self.scraped_data:
+                # Get url, wid and html
+                url = (
+                    web["redirect_url"] if web["redirect_url"] else web["original_url"]
+                )
+                html, wid = web["html"], web["wid"]
+
+                # Get embeddings for each feature of the website
+                features = self.embedder.get_features(url, html, None)
+
+                # Concatenate the features
+                features = self._concatenate_features(features)
+
+                # Save the embeddings
+                embeddings[wid] = features
+
+            # Save the embeddings to disk
+            with open(store_path, "wb") as f:
+                pickle.dump(embeddings, f)
+
+        else:
+            with open(store_path, "rb") as f:
+                embeddings = pickle.load(f)
+
+        return embeddings
+
+    def _concatenate_features(self, features) -> np.ndarray:
+        """
+        Concatenate the features attributes of webpage instance, with respect to the features order in h2v.
+
+        Args:
+            features: A dictionary containing the features of a website
+
+        Returns:
+            A numpy array containing the concatenated features
+        """
+
+        v = np.zeros(self.embedder.input_dim)
+
+        ix = 0
+
+        for f_name in self.features_order:
+            f_dim = self.features_dim[f_name]
+            f_value = features[f_name]
+            if f_value is None:
+                f_value = f_dim * [0]  # if no feature, replace with zeros
+            v[ix : ix + f_dim] = f_value
+            ix += f_dim
+
+        return v
