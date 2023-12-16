@@ -57,7 +57,7 @@ class WebsiteData:
         """
 
         path = os.path.join(self.data_dir, "raw", f"{self.name}.csv")
-        urls = pd.read_csv(path).iloc[:5]
+        urls = pd.read_csv(path)
         return urls
 
     # ----------- Scraping
