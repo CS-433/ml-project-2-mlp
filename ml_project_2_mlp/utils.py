@@ -15,13 +15,16 @@ import os
 import pickle
 import re
 import shutil
+import signal
 import warnings
 import zipfile
+from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Sequence
 
 import gdown
 import hydra
 import pandas as pd
+import requests
 import rich
 import rich.syntax
 import rich.tree
@@ -30,8 +33,6 @@ from bs4 import BeautifulSoup as Soup
 from lightning import Callback
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig, OmegaConf
-from sklearn.metrics import classification_report
-from tld import get_tld
 
 log = logging.Logger(__name__)
 
@@ -625,107 +626,72 @@ def split_in_sentences(soup: Soup) -> list[str]:
     return clean
 
 
-def parse_html(html: str, max_sentences: int = 100) -> dict:
+@contextmanager
+def time_limit(seconds):
     """
-    Parse the HTML of a website and extract the following features:
-    - title
-    - description
-    - keywords
-    - links
-    - sentences
-    - metatags
+    Set a time limit on the execution of a block.
 
     Args:
-        html: HTML of the website
-        max_sentences: Maximum number of sentences to extract from the website
-
-    Returns:
-        A dictionary containing the extracted features
+        seconds (int): time limit in seconds
     """
 
-    # Parse the HTML via BeautifulSoup
-    soup = Soup(html, "html.parser")
+    def signal_handler(signum, frame):
+        raise TimeoutError("Timed out!")
 
-    # Extract meta tags
-    metatags = soup.findAll("meta")
-    metatags = [m.get("name", None) for m in metatags]
-    metatags = [m for m in metatags if m is not None]
-    metatags = list(set([m.lower() for m in metatags]))
-
-    # Extract site title
-    title = soup.find("title")
-    if title is not None:
-        title = str(title.string)
-        title = clean_field(title)
-        if len(title) == 0:
-            title = None
-
-    # Extract site description
-    desc = soup.find("meta", attrs={"name": ["description", "Description"]})
-    if not desc:
-        desc = None
-    else:
-        content = desc.get("content", "")
-
-        if len(content.strip()) == 0:
-            desc = None
-        else:
-            desc = clean_field(content)
-
-    # Extract site keywords
-    kw = soup.find("meta", attrs={"name": "keywords"})
-    if not kw:
-        kw = None
-    else:
-        kw = kw.get("content", "")
-        if len(kw.strip()) == 0:
-            kw = None
-
-    # Extract site links
-    a_tags = soup.find_all("a", href=True)
-    links = [a.get("href", "") for a in a_tags]
-    links = [clean_link(link) for link in links]
-    links = [link for link in links if len(link) != 0]
-    links = [w.lower() for w in " ".join(links).split(" ") if len(w) != 0]
-    if len(links) == 0:
-        links = None
-
-    # Extract text
-    sentences = split_in_sentences(soup)[:max_sentences]
-    if len(sentences) == 0:
-        sentences = None
-
-    # Return the extracted features
-    return {
-        "title": title,
-        "description": desc,
-        "keywords": kw,
-        "links": links,
-        "sentences": sentences,
-        "metatags": metatags,
-    }
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
 
 
-def parse_url(url: str) -> dict:
+def access_website(url: str, timeout: int = 10):
     """
-    Parse the URL of a website and extract the following features:
-    - tld
-    - domain
+    Return the response corresponding to a url, or None if there was a request error
 
     Args:
-        url: URL of the website
+        url (str): url to access
+        timeout (int): time limit in seconds
 
     Returns:
-        A dictionary containing the extracted features
+        text (str): html content of the website
+        head_code (int): head status code
+        get_code (int): get status code
+        content_type (str): content type
+        old_url (str): original url
+        resp_url (str): url of the response
     """
 
-    # Get tld of url
-    url_info = get_tld(url, as_object=True, fail_silently=True)
+    try:
+        # avoid the script to be blocked
+        with time_limit(10 * timeout):
+            # change user-agent so that we don't look like a bot
+            headers = requests.utils.default_headers()
+            headers.update(
+                {
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.16; rv:84.0) Gecko/20100101 Firefox/84.0",
+                }
+            )
 
-    # Get tld
-    tld = url_info.tld
+            # r_head = requests.head("http://" + url, timeout=timeout, headers=headers)
+            if not url.startswith("http://") and not url.startswith("https:"):
+                url = "http://" + url
+            r_get = requests.get(url, timeout=timeout, headers=headers)
 
-    # Get domain name
-    domain = url_info.domain
+            # head_code = r_head.status_code
+            get_code = r_get.status_code
 
-    return {"tld": tld, "domain": domain}
+            # Ensure that the encoding is correct
+            if r_get.encoding.lower() != "utf-8":
+                r_get.encoding = r_get.apparent_encoding
+
+            # Get the text and content type
+            text = r_get.text
+            content_type = r_get.headers.get("content-type", "?").strip()
+
+            # Return the response along with all the details
+            return text, get_code, content_type, url, r_get.url
+
+    except Exception as _:
+        return None
