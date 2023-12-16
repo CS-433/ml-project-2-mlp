@@ -6,6 +6,9 @@ from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import transforms
 
+from ml_project_2_mlp.data import WebsiteData
+from ml_project_2_mlp.labeler import WebsiteLabeler
+
 from .utils import download_if_not_present, load
 
 
@@ -35,8 +38,8 @@ class WebsiteDataModule(LightningDataModule):
 
     def __init__(
         self,
-        data_dir: str,
-        urls: dict[str, str],
+        data: WebsiteData,
+        labeler: WebsiteLabeler,
         data_split: List[float] = [0.6, 0.2, 0.2],
         batch_size: int = 32,
         num_workers: int = 0,
@@ -59,23 +62,20 @@ class WebsiteDataModule(LightningDataModule):
         """
         Fetch the websites and embedded them.
         """
-        # Load the embedded websites (download if necessary)
-        download_if_not_present(
-            dir_path=os.path.join(self.hparams.data_dir, "embedded"),
-            gdrive_url=self.hparams.urls["embedded"],
-            expected_files=["embeddings.pt", "labels.pt"],
-        )
+        pass
 
     def setup(self, stage: str | None = None):
         # Load the embeddings and labels
-        self.embeddings, self.labels = load(
-            dir_path=os.path.join(self.hparams.data_dir, "embedded"),
-            expected_files=["embeddings.pt", "labels.pt"],
-        )
+        self.embeddings = self.hparams.data.get_embeddings()
+        self.labels = self.hparams.labeler.get_labels()
+
+        # Convert to list of lists
+        self.embeddings = [embedding.tolist() for embedding in self.embeddings.values()]
+        self.labels = [labels["labels"] for labels in self.labels.values()]
 
         # Convert to float tensor
-        self.embeddings = self.transforms(self.embeddings)
-        self.labels = self.transforms(self.labels)
+        self.embeddings = torch.FloatTensor(self.embeddings)
+        self.labels = torch.FloatTensor(self.labels)
 
         # Define Custom Dataset
         dataset = TorchDataset(self.embeddings, self.labels)

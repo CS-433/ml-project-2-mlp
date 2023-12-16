@@ -1,9 +1,0 @@
-defaults:
-  - base
-
-name: original
-
-urls:
-  raw: https://drive.google.com/u/0/uc?id=1U1mDeKOkkdn0yVOGOEUWE7OQcZ_JAV-w&export=download
-  processed: https://drive.google.com/u/0/uc?id=1Hyg6ASSVIdUHXagx2TUWwjXVIGUTIew_&export=download
-  embedded: https://drive.google.com/u/0/uc?id=1bYLc6DvZZT7JGVrSZjt54Ciw7qH6MMWn&export=download

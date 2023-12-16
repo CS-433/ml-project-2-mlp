@@ -12,7 +12,54 @@ from ml_project_2_mlp.data import WebsiteData
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
-class GPTLabeler:
+class WebsiteLabeler:
+    def __init__(
+        self,
+        name: str,
+        data: WebsiteData,
+    ):
+        self.name = name
+        self.data = data
+
+        # Get data directory
+        self.data_dir = self.data.data_dir
+        self.labels_dir = os.path.join(
+            self.data_dir,
+            "labels",
+            self.name,
+        )
+        self.labels_path = os.path.join(self.labels_dir, f"{self.data.name}.json")
+        os.makedirs(self.labels_dir, exist_ok=True)
+
+    def get_labels(self) -> dict:
+        """
+        Gets the labels for the data.
+
+        Returns:
+            labels (list[dict]): List of labels for the data.
+        """
+        return self.labels
+
+    def _load_labels(self) -> dict:
+        """
+        Loads the labels from the labels directory.
+        """
+        assert os.path.exists(
+            self.labels_path
+        ), f"Labels not found at {self.labels_path}"
+        with open(self.labels_path) as f:
+            return json.load(f)
+
+
+class HumanLabeler(WebsiteLabeler):
+    def __init__(self, name: str, data: WebsiteData):
+        super().__init__(name, data)
+
+        # Load labels
+        self.labels = self._load_labels()
+
+
+class GPTLabeler(WebsiteLabeler):
     def __init__(
         self,
         name: str,
@@ -43,9 +90,9 @@ class GPTLabeler:
             model (str): Which model to use. Defaults to "gpt-3.5-turbo".
             seed (int): Seed for the API. Defaults to 42.
         """
+        super().__init__(name, data)
+
         # Save parameters
-        self.name = name
-        self.data = data
         self.fewshot = fewshot
         self.features = features
         self.num_sentences = num_sentences
@@ -54,16 +101,6 @@ class GPTLabeler:
         self.relabel = relabel
         self.model = model
         self.seed = seed
-
-        # Get data directory
-        self.data_dir = self.data.data_dir
-        self.labels_dir = os.path.join(
-            self.data_dir,
-            "labels",
-            self.name,
-        )
-        self.labels_path = os.path.join(self.labels_dir, f"{self.data.name}.json")
-        os.makedirs(self.labels_dir, exist_ok=True)
 
         # Load categories
         self.categories = self._load_categories()
@@ -102,15 +139,6 @@ class GPTLabeler:
 
         # Save the labels
         self._save_labels()
-
-    def get_labels(self) -> dict:
-        """
-        Gets the labels for the data.
-
-        Returns:
-            labels (list[dict]): List of labels for the data.
-        """
-        return self.labels
 
     def _load_labels(self) -> dict:
         """
@@ -183,15 +211,12 @@ class GPTLabeler:
                 - wid: The website id.
         """
         labels = {}
-        for website in tqdm(websites):
-            # Get the website id
-            wid = website["wid"]
-
+        for wid, website in tqdm(websites.items()):
             # Label the website
             label = self._label_website(website)
 
             # Store the prediction
-            labels[int(wid)] = label
+            labels[wid] = label
         return labels
 
     def _label_website(self, website: dict) -> dict:

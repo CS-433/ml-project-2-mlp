@@ -27,7 +27,7 @@ class WebsiteClassifier:
     """
 
     def __init__(
-        self, model_path: str, device=None, cpu_threads_count=1, dataloader_workers=1
+        self, model_dir: str, device=None, cpu_threads_count=1, dataloader_workers=1
     ):
         self.input_dim = 4665
         self.output_dim = 14
@@ -61,6 +61,7 @@ class WebsiteClassifier:
                 torch.set_num_threads(cpu_threads_count)
 
         # load pretrained model
+        model_path = os.path.join(model_dir, "homepage2vec")
         weight_path = os.path.join(model_path, "model.pt")
         model_tensor = torch.load(weight_path, map_location=torch.device(self.device))
         self.model = SimpleClassifier(self.input_dim, self.output_dim)

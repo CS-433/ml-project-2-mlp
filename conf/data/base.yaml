@@ -1,3 +1,4 @@
 data_dir: ${paths.data_dir}
+model_dir: ${paths.model_dir}
 
 _target_: ml_project_2_mlp.data.WebsiteData

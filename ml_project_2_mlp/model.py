@@ -22,7 +22,7 @@ class Homepage2VecModule(LightningModule):
 
     def __init__(
         self,
-        model_path: str,
+        model_dir: str,
         device: str,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
@@ -44,13 +44,13 @@ class Homepage2VecModule(LightningModule):
 
         # Load website classifier (feature extractor)
         self.website_clf = WebsiteClassifier(
-            model_path=self.hparams.model_path
+            model_dir=self.hparams.model_dir
         )  # Feature extractor
         self.input_dim = self.website_clf.input_dim
         self.output_dim = self.website_clf.output_dim
 
         # Load pre-trained model (classification head)
-        weight_path = os.path.join(self.hparams.model_path, "model.pt")
+        weight_path = os.path.join(self.hparams.model_dir, "homepage2vec", "model.pt")
         model_tensor = torch.load(weight_path, map_location=self.hparams.device)
         self.model = SimpleClassifier(
             input_dim=self.website_clf.input_dim, output_dim=self.website_clf.output_dim

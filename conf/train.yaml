@@ -3,9 +3,11 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - _self_
-  - datamodule: ???
+  - data: ???
+  - labeler: ???
   - model: homepage2vec
   - logger: null
+  - datamodule: default
   - callbacks: default
   - trainer: default
   - paths: default

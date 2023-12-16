@@ -20,14 +20,14 @@ class WebsiteData:
     produce a processed dataset (scrape, parse, embed
     """
 
-    def __init__(self, name: str, data_dir: str, model_path: str):
+    def __init__(self, name: str, data_dir: str, model_dir: str):
         # User defined attributes
         self.name = name
         self.data_dir = data_dir
-        self.model_path = model_path
+        self.model_dir = model_dir
 
         # Init the embedder model
-        self.embedder = WebsiteClassifier(self.model_path)
+        self.embedder = WebsiteClassifier(self.model_dir)
 
         # Load raw, scraped, processed and embed data
         self.raw_data = self._load_raw_data()
@@ -40,7 +40,7 @@ class WebsiteData:
         return self.raw_data
 
     def get_processed_data(self):
-        return self.proccessed_data
+        return self.processed_data
 
     def get_embeddings(self):
         return self.embedded_data
@@ -57,7 +57,7 @@ class WebsiteData:
         """
 
         path = os.path.join(self.data_dir, "raw", f"{self.name}.csv")
-        urls = pd.read_csv(path)
+        urls = pd.read_csv(path).iloc[:5]
         return urls
 
     # ----------- Scraping
@@ -117,7 +117,6 @@ class WebsiteData:
         valid_content_type = content_type.startswith("text/html")
         return valid_get_code and valid_content_type
 
-    @staticmethod
     def _get_website(self, url: str, timeout: int = 10) -> dict:
         """
         Get raw website content with additional meta info (e.g. response code, content type, etc.))
@@ -184,25 +183,21 @@ class WebsiteData:
 
         # Check if the processed data already exists -> if not process, else load
         if not os.path.exists(save_path):
-            # Filter webs to only include valid ones
-            valid_webs = pd.DataFrame([w for w in self.scraped_data if w["is_valid"]])
-
             # Save the features
             web_features = dict()
 
-            for i in tqdm(range(len(valid_webs))):
-                # Get html
-                html = valid_webs.iloc[i]["html"]
+            for wid, website in tqdm(self.scraped_data.items()):
+                if not website["is_valid"]:
+                    continue
+
+                html = website["html"]
 
                 # Get redirected url if available else original url
                 url = (
-                    valid_webs.iloc[i]["redirect_url"]
-                    if valid_webs.iloc[i]["redirect_url"]
-                    else valid_webs.iloc[i]["original_url"]
+                    website["redirect_url"]
+                    if website["redirect_url"]
+                    else website["original_url"]
                 )
-
-                # Get id
-                wid = valid_webs.iloc[i]["wid"]
 
                 # Get features
                 html_features = self._parse_html(html)
@@ -273,7 +268,7 @@ class WebsiteData:
         if not kw:
             kw = []
         else:
-            kw = list(map(lambda s: s.strip(), kw.get("content", "").split()))
+            kw = kw.get("content", "")
             if len(kw.strip()) == 0:
                 kw = []
             else:
@@ -344,12 +339,12 @@ class WebsiteData:
         # Check if the embeddings already exist -> if not embed, else load
         if not os.path.exists(store_path):
             embeddings = dict()
-            for web in self.scraped_data:
+            for wid, web in self.scraped_data.items():
                 # Get url, wid and html
                 url = (
                     web["redirect_url"] if web["redirect_url"] else web["original_url"]
                 )
-                html, wid = web["html"], web["wid"]
+                html = web["html"]
 
                 # Get embeddings for each feature of the website
                 features = self.embedder.get_features(url, html, None)
@@ -385,8 +380,8 @@ class WebsiteData:
 
         ix = 0
 
-        for f_name in self.features_order:
-            f_dim = self.features_dim[f_name]
+        for f_name in self.embedder.features_order:
+            f_dim = self.embedder.features_dim[f_name]
             f_value = features[f_name]
             if f_value is None:
                 f_value = f_dim * [0]  # if no feature, replace with zeros

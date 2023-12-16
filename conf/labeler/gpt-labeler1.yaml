@@ -1,5 +1,5 @@
 defaults:
-  - base
+  - gpt-base
 
 name: gpt-labeler1
 fewshot: true

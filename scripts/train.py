@@ -7,12 +7,14 @@ from typing import List
 import hydra
 import lightning as L
 import rootutils
-import wandb
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
 import ml_project_2_mlp.utils as utils
+import wandb
+from ml_project_2_mlp.data import WebsiteData
+from ml_project_2_mlp.labeler import WebsiteLabeler
 from ml_project_2_mlp.logger import RankedLogger
 
 # Setup root environment
@@ -36,9 +38,19 @@ def main(cfg: DictConfig):
     if cfg.get("seed"):
         L.seed_everything(cfg.seed)
 
+    # Instantiate data
+    log.info(f"Instantiating data <{cfg.data._target_}>")
+    data: WebsiteData = hydra.utils.instantiate(cfg.data)
+
+    # Instantiate labeler
+    log.info(f"Instantiating labeler <{cfg.labeler._target_}>")
+    labeler: WebsiteLabeler = hydra.utils.instantiate(cfg.labeler, data=data)
+
     # Instantiate data module
-    log.info(f"Instantiating datamodule <{cfg.data._target_}>")
-    datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data)
+    log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")
+    datamodule: LightningDataModule = hydra.utils.instantiate(
+        cfg.datamodule, data=data, labeler=labeler
+    )
 
     # Instantiate model module
     log.info(f"Instantiating model <{cfg.model._target_}>")
