@@ -1,0 +1,11 @@
+defaults:
+  - gpt-labeler2
+
+name: gpt-labeler3
+features:
+  - tld
+  - domain
+  - tags
+  - title
+  - description
+  - keywords

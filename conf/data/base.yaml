@@ -1,3 +1,2 @@
-data_dir: ${paths.data_dir}/${data.name}
-
 _target_: ml_project_2_mlp.data.WebsiteData
+data_dir: ${paths.data_dir}

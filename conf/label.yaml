@@ -4,8 +4,8 @@
 defaults:
   - _self_
   - data: ???
+  - labeler: ???
   - paths: default
-  - optional local: default
 
 # Random seed for reproducibility
 seed: 42
