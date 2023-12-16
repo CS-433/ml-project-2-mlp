@@ -1,4 +1,5 @@
 data_dir: ${paths.data_dir}
 model_dir: ${paths.model_dir}
+num_samples: null # Use all samples
 
 _target_: ml_project_2_mlp.data.WebsiteData
