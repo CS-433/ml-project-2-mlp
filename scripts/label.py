@@ -3,6 +3,8 @@ Script to label an existing dataset using a specified
 labeler. Configurations for this script are in `conf/label.yaml`.
 """
 
+from cProfile import label
+
 import hydra
 import rootutils
 from omegaconf import DictConfig, OmegaConf
