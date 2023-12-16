@@ -38,6 +38,8 @@ openai = "^1.4.0"
 python-dotenv = "^1.0.0"
 
 [tool.poetry.scripts]
+scrape = 'scripts.scrape:main'
+label = 'scripts.label:main'
 train = 'scripts.train:main'
 eval = 'scripts.eval:main'
 

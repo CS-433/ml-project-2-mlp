@@ -1,8 +1,7 @@
 defaults:
-  - default
+  - base
 
-data_dir: ${paths.data_dir}/crowdsourced
-_target_: ml_project_2_mlp.data.CrowdSourcedDataModule
+name: original
 
 urls:
   raw: https://drive.google.com/u/0/uc?id=1U1mDeKOkkdn0yVOGOEUWE7OQcZ_JAV-w&export=download

@@ -3,7 +3,7 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - _self_
-  - data: ???
+  - datamodule: ???
   - model: homepage2vec
   - logger: null
   - callbacks: default

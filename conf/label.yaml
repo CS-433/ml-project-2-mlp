@@ -1,0 +1,11 @@
+# @package _global_
+
+# Default configurations (precendence in reverse order)
+defaults:
+  - _self_
+  - data: ???
+  - paths: default
+  - optional local: default
+
+# Random seed for reproducibility
+seed: 42
