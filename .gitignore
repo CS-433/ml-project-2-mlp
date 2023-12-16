@@ -1,6 +1,5 @@
 # Custom
 .*_cache
-/data
 /models
 /outputs
 /logs
@@ -9,6 +8,11 @@
 /conf/local/*
 
 !.gitkeep
+
+# Ignore data, but not raw data
+data/*
+!data/raw/
+!data/meta/
 
 
 # Byte-compiled / optimized / DLL files

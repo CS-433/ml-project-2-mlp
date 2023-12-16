@@ -1,0 +1,41 @@
+{
+            "title": "The New York Times - Breaking News, World News & Multimedia",
+            "description": "Find breaking news, multimedia, reviews & opinion on Washington, business, sports, movies, travel, books, jobs, education, real estate, cars & more.",
+            "keywords": [
+                "breaking news",
+                "world news",
+                "politics",
+                "economy",
+                "sports",
+                "arts",
+                "movies",
+                "travel",
+                "books",
+                "education",
+                "real estate",
+                "cars"
+            ],
+            "links": [
+                "breaking-news",
+                "world-news",
+                "business",
+                "sports",
+                "arts",
+                "travel"
+            ],
+            "tld": "com",
+            "domain": "nytimes.com",
+            "metatags": ["NYT", "news", "current events", "global news", "media"],
+            "sentences": [
+                "Breaking news: A major political development reshapes the landscape in Washington.",
+                "Explore the latest world news and stay informed about global events.",
+                "In-depth analysis of the current political and economic climate.",
+                "Sports enthusiasts rejoice as the latest scores and highlights unfold.",
+                "Discover the arts scene with reviews and insights into movies and cultural events.",
+                "Plan your next adventure with our travel guides and recommendations.",
+                "Insights into the business world, from market trends to corporate strategies.",
+                "Education matters: Stay updated on developments in the field of academia.",
+                "Real estate trends and property insights for homeowners and investors.",
+                "Rev up your engines with the latest updates on cars and automotive industry."
+            ]
+        }
