@@ -18,11 +18,14 @@ Includes:
     - trunc: Function to truncate the output of a tokenizer to a given length.
 """
 
+import logging
 import re
 from collections import Counter
 
 from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
+
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 
 
 class TextualExtractor:
@@ -34,8 +37,10 @@ class TextualExtractor:
 
     def __init__(self, device="cpu"):
         if not TextualExtractor.xlmr:
+            # Turn off logging and progress bar
             TextualExtractor.xlmr = SentenceTransformer(
-                "paraphrase-xlm-r-multilingual-v1", device=device
+                "paraphrase-xlm-r-multilingual-v1",
+                device=device,
             )
         # self.xlmr = SentenceTransformer('xlm-r-distilroberta-base-paraphrase-v1', device=device)
 
