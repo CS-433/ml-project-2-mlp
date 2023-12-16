@@ -66,9 +66,10 @@ class GPTLabeler(WebsiteLabeler):
         data: WebsiteData,
         fewshot: bool = False,
         features: list[str] | None = None,
-        num_sentences: int = 10,
+        num_sentences: int = 100,
+        num_links: int = 50,
+        num_keywords: int = 50,
         num_tags: int = 10,
-        num_keywords: int = 10,
         relabel: bool = True,
         model: str = "gpt-3.5-turbo",
         seed: int = 42,
@@ -96,6 +97,7 @@ class GPTLabeler(WebsiteLabeler):
         self.fewshot = fewshot
         self.features = features
         self.num_sentences = num_sentences
+        self.num_links = num_links
         self.num_tags = num_tags
         self.num_keywords = num_keywords
         self.relabel = relabel
@@ -187,6 +189,7 @@ class GPTLabeler(WebsiteLabeler):
         """
         # Only include the specified number of sentences
         website["sentences"] = website["sentences"][: self.num_sentences]
+        website["links"] = website["links"][: self.num_links]
         website["keywords"] = website["keywords"][: self.num_keywords]
         website["metatags"] = website["metatags"][: self.num_tags]
 
