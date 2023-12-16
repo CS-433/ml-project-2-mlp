@@ -5,9 +5,8 @@ labeler. Configurations for this script are in `conf/label.yaml`.
 
 import hydra
 import rootutils
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
-import ml_project_2_mlp.utils as utils
 from ml_project_2_mlp.logger import RankedLogger
 
 # Setup root environment
@@ -23,7 +22,16 @@ log = RankedLogger(__name__, rank_zero_only=True)
 
 @hydra.main(version_base=None, config_path="../conf", config_name="label")
 def main(cfg: DictConfig):
+    cfg = OmegaConf.create(cfg)
     print(cfg)
+
+    # Instantiate data
+    data = hydra.utils.instantiate(cfg.data)
+    print(data)
+
+    # Instantiate labeler
+    labeler = hydra.utils.instantiate(cfg.labeler, data=data)
+    print(labeler)
 
 
 if __name__ == "__main__":
