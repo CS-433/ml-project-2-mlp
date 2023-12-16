@@ -1,10 +1,15 @@
 import json
+import logging
 import os
+import time
 
 from openai import OpenAI
 from tqdm import tqdm
 
 from ml_project_2_mlp.data import WebsiteData
+
+# Setup ranked logger
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 class GPTLabeler:
@@ -212,6 +217,7 @@ class GPTLabeler:
         ]
 
         # Send the messages to the API
+        start = time.time()
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
@@ -219,6 +225,7 @@ class GPTLabeler:
             max_tokens=200,
             response_format={"type": "json_object"},
         )
+        duration = time.time() - start
 
         # Parse the response
         json_output = json.loads(response.choices[0].message.content)
@@ -236,6 +243,7 @@ class GPTLabeler:
             "labels": labels,
             "is_valid": is_valid,
             "reason_invalid": reason_invalid,
+            "duration": duration,
         }
 
         return output
