@@ -403,7 +403,7 @@ def parse_html(
     )
 
     return {
-        "url": row['Input.url'],
+        "url": row["Input.url"],
         "title": soup.title.string if soup.title else None,
         "links": list(links.items())[:max_links],
         "meta_tags": meta_tags,
