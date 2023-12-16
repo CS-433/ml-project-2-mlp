@@ -20,11 +20,35 @@ class WebsiteData:
     produce a processed dataset (scrape, parse, embed
     """
 
-    def __init__(self, name: str, data_dir: str, model_dir: str):
+    def __init__(
+        self, name: str, data_dir: str, model_dir: str, num_samples: int | None = None
+    ):
+        """
+        Initialises a WebsiteData object. The object is initialised with a name
+        that is used to load the raw data from disk. The raw data is a CSV file
+        containing a list of URLs to be scraped along with the corresponding
+        website ID (wid). The raw data is then scraped and processed to produce
+        a dataset of embedded websites.
+
+        Args:
+            name: Name of the dataset
+            data_dir: Path to the data directory
+            model_dir: Path to the model directory
+            num_samples (optionally): Number of samples to use from the raw data
+        """
         # User defined attributes
         self.name = name
         self.data_dir = data_dir
         self.model_dir = model_dir
+        self.num_samples = num_samples
+
+        # Init the save directory
+        self.save_dir = os.path.join(
+            self.data_dir,
+            "features",
+            self.name + f"-{num_samples}" if num_samples is not None else name,
+        )
+        os.makedirs(self.save_dir, exist_ok=True)
 
         # Init the embedder model
         self.embedder = WebsiteClassifier(self.model_dir)
@@ -58,6 +82,11 @@ class WebsiteData:
 
         path = os.path.join(self.data_dir, "raw", f"{self.name}.csv")
         urls = pd.read_csv(path)
+
+        # Optionally, use only a subset of the data
+        if self.num_samples is not None:
+            urls = urls.iloc[: self.num_samples]
+
         return urls
 
     # ----------- Scraping
@@ -76,14 +105,14 @@ class WebsiteData:
         """
 
         # Define the path where the scraped data will be/are saved
-        save_dir = os.path.join(self.data_dir, "features", self.name)
-        save_path = os.path.join(save_dir, "scraped.pkl")
-        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(self.save_dir, "scraped.pkl")
 
         # Check if the scraped data already exists -> if not scrape, else load
         if not os.path.exists(save_path):
             websites = dict()
-            for _, row in tqdm(self.raw_data.iterrows(), total=len(self.raw_data)):
+            for _, row in tqdm(
+                self.raw_data.iterrows(), total=len(self.raw_data), desc="Scraping data"
+            ):
                 # Get the website content
                 result = self._get_website(row["url"])
                 wid = row["wid"]
@@ -177,16 +206,15 @@ class WebsiteData:
             web_features : list of dicts where each dict includes the needed info
         """
         # Store path
-        save_dir = os.path.join(self.data_dir, "features", self.name)
-        save_path = os.path.join(save_dir, "processed.pkl")
-        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(self.save_dir, "processed.pkl")
+        os.makedirs(self.save_dir, exist_ok=True)
 
         # Check if the processed data already exists -> if not process, else load
         if not os.path.exists(save_path):
             # Save the features
             web_features = dict()
 
-            for wid, website in tqdm(self.scraped_data.items()):
+            for wid, website in tqdm(self.scraped_data.items(), desc="Processing data"):
                 if not website["is_valid"]:
                     continue
 
@@ -332,14 +360,15 @@ class WebsiteData:
             A dictionary containing the embedded data.
         """
         # Ensure the dir path exists, and init the store path
-        dir_path = os.path.join(self.data_dir, "features", self.name)
-        store_path = os.path.join(dir_path, "embeddings.pkl")
-        os.makedirs(dir_path, exist_ok=True)
+        save_path = os.path.join(self.save_dir, "embeddings.pkl")
 
         # Check if the embeddings already exist -> if not embed, else load
-        if not os.path.exists(store_path):
+        if not os.path.exists(save_path):
             embeddings = dict()
-            for wid, web in self.scraped_data.items():
+            for wid, web in tqdm(self.scraped_data.items(), desc="Embedding websites"):
+                if not web["is_valid"]:
+                    continue
+
                 # Get url, wid and html
                 url = (
                     web["redirect_url"] if web["redirect_url"] else web["original_url"]
@@ -356,11 +385,11 @@ class WebsiteData:
                 embeddings[wid] = features
 
             # Save the embeddings to disk
-            with open(store_path, "wb") as f:
+            with open(save_path, "wb") as f:
                 pickle.dump(embeddings, f)
 
         else:
-            with open(store_path, "rb") as f:
+            with open(save_path, "rb") as f:
                 embeddings = pickle.load(f)
 
         return embeddings
