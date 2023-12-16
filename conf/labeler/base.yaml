@@ -4,16 +4,15 @@ name: ???
 fewshot: false
 
 # Features to include in prompt
-features: null
+features: []
 
 # GPT model to use
 model: gpt-3.5-turbo-1106 # gpt-3.5-turbo / gpt-4
 
 # Number of sentence to include in prompt
-num_sentences: 10
-
-# Number of tags to include in prompt
+num_sentences: 20
 num_tags: 10
+num_keywords: 10
 
 # Whether to re-run the labeling if already exists
 relabel: true

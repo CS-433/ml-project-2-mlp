@@ -4,7 +4,7 @@ import os
 from openai import OpenAI
 from tqdm import tqdm
 
-from .data import WebsiteData
+from ml_project_2_mlp.data import WebsiteData
 
 
 class GPTLabeler:
@@ -16,23 +16,27 @@ class GPTLabeler:
         features: list[str] | None = None,
         num_sentences: int = 10,
         num_tags: int = 10,
+        num_keywords: int = 10,
         relabel: bool = True,
         model: str = "gpt-3.5-turbo",
         seed: int = 42,
     ):
         """
-        Initialises a GPTLabeler object to label websites using a LLM. The class uses the OpenAI API to
-        get multi-label predictions for the topic of websites. Many parameters can be set to configure the
-        labeler, which influence the behaviour of the labeler, e.g. whether to include an label example,
-        which features to use, which model to use, etc.
+        Loads the labels for a dataset that were generated from a labeler using the OpenAI API.
+        If the labels are not yet present, or the relabel flag is set to True, the labels are generated
+        first.
 
         Args:
+            name (str): Name of the labeler.
             data (WebsiteData): WebsiteData object containing the data to label.
             fewshot (bool): Whether to use few-shot learning. Defaults to False.
             features (list[str], optiona): List of features to include in few-shot prompt. Defaults to None.
             num_sentences (int): Number of sentences to use in the prompt. Defaults to 10.
             num_tags (int): Number of tags to use in the prompt. Defaults to 10.
+            num_keywords (int): Number of keywords to use in the prompt. Defaults to 10.
             relabel (bool): Whether to relabel the data. Defaults to True.
+            model (str): Which model to use. Defaults to "gpt-3.5-turbo".
+            seed (int): Seed for the API. Defaults to 42.
         """
         # Save parameters
         self.name = name
@@ -41,7 +45,9 @@ class GPTLabeler:
         self.features = features
         self.num_sentences = num_sentences
         self.num_tags = num_tags
+        self.num_keywords = num_keywords
         self.relabel = relabel
+        self.model = model
         self.seed = seed
 
         # Get data directory
@@ -54,8 +60,11 @@ class GPTLabeler:
         self.labels_path = os.path.join(self.labels_dir, f"{self.data.name}.json")
         os.makedirs(self.labels_dir, exist_ok=True)
 
+        # Load categories
+        self.categories = self._load_categories()
+
         # Load the labels if they exist
-        if not relabel and not os.path.exists(self.labels_path):
+        if not relabel and os.path.exists(self.labels_path):
             self.labels = self._load_labels()
             return
 
@@ -63,26 +72,27 @@ class GPTLabeler:
         api_key = os.environ.get("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
 
-        # Get the website data
-        websites = self.data.get_processed_data()
-
-        # Construct example
-        example_website = self._load_example_website()
-        print(example_website)
-        example_labels = self._load_example_labels()
-        print(example_labels)
-        example_website = self._construct_example(example_website)
-
         # Construct the prompt
         self.system_prompt = {
             "role": "system",
-            "content": "You are an expert in website topic classification that accurately predicts the topic of a webpage based on features of the website, such as the TLD, domain, meta-tags, text, and more. Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as keys and binary values (0 or 1) indicating relevance. Here is an example: Given website data: "
-            + json.dumps(example_website)
-            + " a good classification is: "
-            + json.dumps(example_labels),
+            "content": "You are an expert in website topic classification that accurately predicts the topic of a webpage based on features of the website, such as the TLD, domain, meta-tags, text, and more. Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as keys and binary values (0 or 1) indicating relevance.",
         }
 
-        # Annotate
+        # Add few-shot example to prompt
+        if self.fewshot:
+            example_website = self._load_example_website()
+            example_labels = self._load_example_labels()
+            example_features = self._extract_features(example_website)
+
+            self.system_prompt["content"] += (
+                "Here is an example: Given website data: "
+                + json.dumps(example_features)
+                + " a good classification is: "
+                + json.dumps(example_labels)
+            )
+
+        # Annotate websites
+        websites = self.data.get_processed_data()
         self.labels = self._label_websites(websites)
 
         # Save the labels
@@ -97,12 +107,24 @@ class GPTLabeler:
         """
         return self.labels
 
-    def _save_labels(self):
+    def _load_labels(self) -> dict:
+        """
+        Loads the labels from the labels directory.
+        """
+        with open(self.labels_path) as f:
+            return json.load(f)
+
+    def _save_labels(self) -> None:
         assert self.labels is not None
         with open(self.labels_path, "w") as f:
             json.dump(self.labels, f)
 
-    def _load_example_website(self):
+    def _load_categories(self) -> list[str]:
+        path = os.path.join(self.data_dir, "meta", "categories.txt")
+        with open(path) as f:
+            return [line.strip() for line in f]
+
+    def _load_example_website(self) -> dict:
         """
         Loads the example website data.
         """
@@ -110,36 +132,33 @@ class GPTLabeler:
         with open(path) as f:
             return json.load(f)
 
-    def _load_example_labels(self):
+    def _load_example_labels(self) -> dict:
         """
-        Loads the annotation for the example website data.
+        Loads the labels for the example website data.
         """
         path = os.path.join(self.data_dir, "meta", "example-labels.json")
         with open(path) as f:
             return json.load(f)
 
-    def _construct_example(self, example_website: dict):
+    def _extract_features(self, website: dict) -> dict:
         """
-        Only include the features that are specified in the features list
-        for the few-shot prompt. Additionally, only include the specified number
-        of sentences and tags.
+        Extract the features from the website data that the labeler has access to
+        and that are specified in the features list. Also, only include the specified
+        number of sentences, tags and keywords.
 
         Args:
-            example_website (dict): Dictionary with the example website data.
-            features (list[str]): List of features to include in the few-shot prompt.
+            website (dict): Dictionary with the example website data.
+
+        Returns:
+            website (dict): Dictionary with the example website data with only the specified features.
         """
-        assert self.features is not None
+        # Only include the specified number of sentences
+        website["sentences"] = website["sentences"][: self.num_sentences]
+        website["keywords"] = website["keywords"][: self.num_keywords]
+        website["metatags"] = website["metatags"][: self.num_tags]
 
         # Only include the specified features
-        example_website = {
-            k: v for k, v in example_website.items() if k in self.features
-        }
-
-        # Only include the specified number of sentences
-        example_website["sentences"] = example_website["sentences"][
-            : self.num_sentences
-        ]
-        example_website["tags"] = example_website["tags"][: self.num_tags]
+        example_website = {k: v for k, v in website.items() if k in self.features}
 
         return example_website
 
@@ -158,25 +177,17 @@ class GPTLabeler:
                 - reason_invalid: Reason why the classification output is invalid.
                 - wid: The website id.
         """
-        # Classify websites
-        predictions = {}
-        try:
-            for website in tqdm(websites):
-                # Downsample features - if count is None, do not downsample
-                wid = website["wid"]
-                website = self._construct_example(website)
+        labels = {}
+        for website in tqdm(websites):
+            # Get the website id
+            wid = website["wid"]
 
-                # Classify the website
-                pred = self._label_website(website)
+            # Label the website
+            label = self._label_website(website)
 
-                # Save the prediction
-                predictions[wid] = pred
-
-        except Exception as e:
-            print(e)
-            return predictions
-
-        return predictions
+            # Store the prediction
+            labels[int(wid)] = label
+        return labels
 
     def _label_website(self, website: dict) -> dict:
         """
@@ -188,14 +199,16 @@ class GPTLabeler:
         Returns:
             output (dict): Dictionary with the labeling results.
         """
-
-        # Parse the input into json
-        content = json.dumps(website, ensure_ascii=False)
+        # Construct the example
+        website_features = self._extract_features(website)
 
         # Define the messages to send to the API
         messages = [
             self.system_prompt,
-            {"role": "user", "content": content},
+            {
+                "role": "user",
+                "content": json.dumps(website_features, ensure_ascii=False),
+            },
         ]
 
         # Send the messages to the API
@@ -213,14 +226,14 @@ class GPTLabeler:
 
         # If valid format, one hot encode the categories
         if is_valid:
-            preds = [json_output[category] for category in self.categories]
+            labels = [json_output[category] for category in self.categories]
         else:
-            preds = [0] * len(self.categories)
+            labels = [0] * len(self.categories)
 
         # Construct the output
         output = {
-            "input": website,
-            "output": preds,
+            "features": website_features,
+            "labels": labels,
             "is_valid": is_valid,
             "reason_invalid": reason_invalid,
         }

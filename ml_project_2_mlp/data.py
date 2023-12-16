@@ -3,10 +3,11 @@ import pickle
 from urllib.parse import urlparse
 
 import pandas as pd
-import utils
 from bs4 import BeautifulSoup as Soup
 from tld import get_tld
 from tqdm import tqdm
+
+import ml_project_2_mlp.utils as utils
 
 
 class WebsiteData:
@@ -25,7 +26,7 @@ class WebsiteData:
         # Load raw, scraped, processed and embed data
         self.raw_data = self._load_raw_data()
         self.scraped_data = self._scrape_data()
-        self.proccessed_data = self._process_data()
+        self.processed_data = self._process_data()
         self.embedded_data = self._embed_data()
 
     def get_raw_data(self):
@@ -65,12 +66,16 @@ class WebsiteData:
         """
 
         # Define the path where the scraped data will be/are saved
-        store_path = os.path.join(self.data_dir, "features", self.name, "scraped.pkl")
+        save_dir = os.path.join(self.data_dir, "features", self.name)
+        save_path = os.path.join(save_dir, "scraped.pkl")
+        os.makedirs(save_dir, exist_ok=True)
 
         # Check if the scraped data already exists -> if not scrape, else load
-        if not os.path.exists(store_path):
+        if not os.path.exists(save_path):
             websites = []
-            for _, row in tqdm(self.raw_data.iterrows(), total=len(self.raw_data)):
+            for _, row in tqdm(
+                list(self.raw_data.iterrows())[:5], total=len(self.raw_data[:5])
+            ):
                 # Get the website content
                 result = self._get_website(row["url"], row["wid"])
 
@@ -78,11 +83,11 @@ class WebsiteData:
                 websites.append(result)
 
             # Save the scraped data to disk
-            with open(store_path, "wb") as f:
+            with open(save_path, "wb") as f:
                 pickle.dump(websites, f)
 
         else:
-            with open(store_path, "rb") as f:
+            with open(save_path, "rb") as f:
                 websites = pickle.load(f)
 
         return websites
@@ -93,7 +98,6 @@ class WebsiteData:
         valid_content_type = content_type.startswith("text/html")
         return valid_get_code and valid_content_type
 
-    @staticmethod
     def _get_website(self, url, wid, timeout=10):
         """
         Get raw website content with additional meta info (e.g. response code, content type, etc.))
@@ -156,10 +160,12 @@ class WebsiteData:
             web_features : list of dicts where each dict includes the needed info
         """
         # Store path
-        store_path = os.path.join(self.data_dir, "features", self.name, "processed.pkl")
+        save_dir = os.path.join(self.data_dir, "features", self.name)
+        save_path = os.path.join(save_dir, "processed.pkl")
+        os.makedirs(save_dir, exist_ok=True)
 
         # Check if the processed data already exists -> if not process, else load
-        if not os.path.exists(store_path):
+        if not os.path.exists(save_path):
             # Filter webs to only include valid ones
             valid_webs = pd.DataFrame([w for w in self.scraped_data if w["is_valid"]])
 
@@ -187,8 +193,11 @@ class WebsiteData:
 
                 # Save the features
                 web_features.append(features)
+
+                with open(save_path, "wb") as f:
+                    pickle.dump(web_features, f)
         else:
-            with open(store_path, "rb") as f:
+            with open(save_path, "rb") as f:
                 web_features = pickle.load(f)
 
         return web_features
@@ -243,11 +252,11 @@ class WebsiteData:
         # Extract site keywords
         kw = soup.find("meta", attrs={"name": "keywords"})
         if not kw:
-            kw = None
+            kw = []
         else:
-            kw = kw.get("content", "")
+            kw = list(map(lambda s: s.strip(), kw.get("content", "").split()))
             if len(kw.strip()) == 0:
-                kw = None
+                kw = []
 
         # Extract site links
         a_tags = soup.find_all("a", href=True)

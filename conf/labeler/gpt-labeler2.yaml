@@ -2,8 +2,10 @@ defaults:
   - gpt-labeler1
 
 name: gpt-labeler2
-fewshot: true
 features:
   - tld
   - domain
   - tags
+  - title
+  - description
+  - keywords

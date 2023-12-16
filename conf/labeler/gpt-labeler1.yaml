@@ -2,3 +2,8 @@ defaults:
   - base
 
 name: gpt-labeler1
+fewshot: true
+features:
+  - tld
+  - domain
+  - metatags
