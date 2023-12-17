@@ -261,7 +261,7 @@ class GPTLabeler(WebsiteLabeler):
 
         # If valid format, one hot encode the categories
         if is_valid:
-            labels = [json_output[category] for category in self.categories]
+            labels = [json_output.get(category, 0) for category in self.categories]
         else:
             labels = [0] * len(self.categories)
 
