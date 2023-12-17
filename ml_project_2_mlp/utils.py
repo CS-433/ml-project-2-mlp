@@ -179,12 +179,16 @@ def log_hyperparameters(setup_dict: dict) -> None:
 
     # Save information on run
     hparams["task_name"] = cfg.get("task_name")
+    hparams["finetune"] = cfg.get("finetune")
+    hparams["group"] = cfg.get("group")
     hparams["tags"] = cfg.get("tags")
     hparams["seed"] = cfg.get("seed")
 
     # Save model, data, trainer and callback configs
-    hparams["model"] = cfg["model"]
     hparams["data"] = cfg["data"]
+    hparams["labeler"] = cfg["labeler"]
+    hparams["datamodule"] = cfg["datamodule"]
+    hparams["model"] = cfg["model"]
     hparams["trainer"] = cfg["trainer"]
     hparams["callbacks"] = cfg.get("callbacks")
 
