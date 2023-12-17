@@ -38,16 +38,13 @@ class WebsiteData:
         """
         # User defined attributes
         self.name = name
+        self.name_subset = f"{name}-{num_samples}" if num_samples is not None else name
         self.data_dir = data_dir
         self.model_dir = model_dir
         self.num_samples = num_samples
 
         # Init the save directory
-        self.save_dir = os.path.join(
-            self.data_dir,
-            "features",
-            self.name + f"-{num_samples}" if num_samples is not None else name,
-        )
+        self.save_dir = os.path.join(self.data_dir, "features", self.name_subset)
         os.makedirs(self.save_dir, exist_ok=True)
 
         # Init the embedder model
