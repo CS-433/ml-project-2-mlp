@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import gdown
 import hydra
+import numpy as np
 import pandas as pd
 import requests
 import rich
@@ -32,6 +33,7 @@ import torch
 from bs4 import BeautifulSoup as Soup
 from lightning import Callback
 from lightning.pytorch.loggers import Logger
+from matplotlib import pyplot as plt
 from omegaconf import DictConfig, OmegaConf
 
 log = logging.Logger(__name__)
@@ -695,3 +697,138 @@ def access_website(url: str, timeout: int = 10):
 
     except Exception as _:
         return None
+
+
+def aggregate(df, param_tuples, metric="mean"):
+    df_agg = df.groupby(param_tuples).agg({"macro_f1": [metric]}).unstack()
+    df_agg.columns = df_agg.columns.droplevel([0, 1])
+    return df_agg
+
+
+def plot_heatmap_on_ax(
+    ax,
+    results,
+    param1_values,
+    param2_values,
+    cmap,
+    xlabels=False,
+    ylabels=False,
+    vmin=0,
+    vmax=1,
+    pos="NW",
+):
+    cax = ax.matshow(results, cmap=cmap, vmin=vmin, vmax=vmax, aspect="auto")
+    ax.set_yticks(
+        np.arange(len(param1_values)), param1_values if ylabels else [], fontsize=22
+    )
+    ax.set_xticks(
+        np.arange(len(param2_values)),
+        param2_values if xlabels else [],
+        rotation="vertical",
+        fontsize=22,
+    )
+
+    ax.tick_params(
+        axis="both",
+        right="E" in pos,
+        left="W" in pos,
+        bottom="S" in pos,
+        top="N" in pos,
+        labelbottom="S" in pos,
+        labeltop="N" in pos,
+        labelleft="W" in pos,
+        labelright="E" in pos,
+    )
+    ax.grid(False)
+    return cax
+
+
+def calculate_vs(df_runs, params, metric="mean", vmin=None, vmax=None):
+    if vmin is not None and vmax is not None:
+        return vmin, vmax
+
+    values = []
+    for param1 in params:
+        for param2 in params:
+            if param1 == param2:
+                continue
+            df_agg = aggregate(df_runs, [param1, param2], metric)
+            values.extend(df_agg.values.flatten())
+
+    vmin = min(values) if vmin is None else vmin
+    vmax = max(values) if vmax is None else vmax
+    return vmin, vmax
+
+
+def grid(
+    df_runs,
+    params,
+    metric="mean",
+    cmap="YlGn",
+    vmin=None,
+    vmax=None,
+    figsize=(10, 10),
+    rename_dict=None,
+):
+    n = len(params)
+    fig, axs = plt.subplots(nrows=n - 1, ncols=n - 1, figsize=figsize)
+    fig.tight_layout(pad=3.0)
+
+    rename = lambda x: rename_dict[x] if rename_dict and x in rename_dict else x
+
+    vmin, vmax = calculate_vs(df_runs, params, metric, vmin=vmin, vmax=vmax)
+    for i in range(n - 1):
+        for j in range(1, i + 1):
+            axs[i][j - 1].axis("off")
+        for j in range(i + 1, n):
+            param1 = params[i]
+            param2 = params[j]
+            ax = axs[i, j - 1]
+            df_agg = aggregate(df_runs, [param1, param2], metric)
+            cax = plot_heatmap_on_ax(
+                axs[i][j - 1],
+                df_agg,
+                [rename(x) for x in df_agg.index],
+                [rename(x) for x in df_agg.columns],
+                cmap,
+                i == 0,
+                j == n - 1,
+                vmin=vmin,
+                vmax=vmax,
+                pos="NE",
+            )
+
+            # print labels
+            if i == j - 1:
+                # position lable on top
+                axs[i][j - 1].set_xlabel(rename(param2), fontsize=22, fontweight="bold")
+                # position the label a bit down
+                if j != n - 1:
+                    axs[i][j - 1].xaxis.set_label_coords(0.5, -0.3)
+                if i == 0:
+                    axs[i][j - 1].set_ylabel(
+                        rename(param1), fontsize=22, fontweight="bold", rotation=0
+                    )
+
+                    axs[i][j - 1].yaxis.set_label_coords(-0.2, 0.4)
+
+    fig.subplots_adjust(wspace=0.02, hspace=0.02)
+
+    for ax in axs.flat:
+        ax.set_anchor("NE")
+
+    # colorbar anchor to the left
+    ticks = np.linspace(vmin, vmax, 5)
+    cb = fig.colorbar(
+        cax,
+        ax=axs[-1, 0:2],
+        orientation="horizontal",
+        aspect=15,
+        ticks=ticks,
+    )
+    # # legend with red dot and best hyperparameters
+    # cb.ax.legend([plt.scatter([], [], marker='o', color='red')], ['best hyperparameters'], loc='lower center', ncol=2,
+    #              fontsize=16, frameon=False, bbox_to_anchor=(0.5, 1))
+    # colorbar ticks
+    cb.ax.set_xticklabels([f"{tick:.2f}" for tick in ticks], fontsize=22)
+    return fig
