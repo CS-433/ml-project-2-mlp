@@ -1,0 +1,5 @@
+defaults:
+  - gpt-base
+
+name: gpt3.5-context0
+fewshot: false

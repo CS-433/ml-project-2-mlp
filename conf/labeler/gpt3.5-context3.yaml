@@ -1,7 +1,7 @@
 defaults:
-  - gpt-labeler1
+  - gpt3.5-context2
 
-name: gpt-labeler2
+name: gpt3.5-context3
 features:
   - tld
   - domain
@@ -9,3 +9,5 @@ features:
   - title
   - description
   - keywords
+  - links
+  - text

@@ -1,0 +1,5 @@
+defaults:
+  - gpt3.5-context2
+
+name: gpt4-context2
+model: gpt-4-1106-preview
