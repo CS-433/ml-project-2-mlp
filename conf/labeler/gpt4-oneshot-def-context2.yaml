@@ -1,0 +1,8 @@
+defaults:
+  - gpt-base
+  - model: gpt4
+  - shot: oneshot
+  - context: context2
+
+define_categories: true
+name: gpt4-oneshot-def-context2

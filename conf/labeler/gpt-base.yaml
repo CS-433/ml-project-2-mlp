@@ -1,20 +1,14 @@
 defaults:
   - base
 
-# Whether to include an example annotation in the prompt
-fewshot: false
-
-# Features to include in prompt
-features: []
-
-# GPT model to use
-model: gpt-3.5-turbo-1106 # gpt-3.5-turbo / gpt-4
-
 # Number of sentence to include in prompt
 num_sentences: 100
 num_keywords: 50
 num_links: 50
 num_tags: 10
+
+# Whether to define the categories
+define_categories: false
 
 # Whether to re-run the labeling if already exists
 relabel: false

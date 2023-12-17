@@ -1,0 +1,7 @@
+defaults:
+  - gpt-base
+  - model: gpt3
+  - shot: zeroshot
+  - context: context3
+
+name: gpt3.5-zeroshot-context3

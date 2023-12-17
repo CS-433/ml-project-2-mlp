@@ -67,6 +67,7 @@ class GPTLabeler(WebsiteLabeler):
         name: str,
         data: WebsiteData,
         fewshot: bool = False,
+        define_categories: bool = False,
         features: list[str] | None = None,
         num_sentences: int = 100,
         num_links: int = 50,
@@ -85,6 +86,7 @@ class GPTLabeler(WebsiteLabeler):
             name (str): Name of the labeler.
             data (WebsiteData): WebsiteData object containing the data to label.
             fewshot (bool): Whether to use few-shot learning. Defaults to False.
+            define_categories (bool): Whether to define the categories in the prompt. Defaults to False.
             features (list[str], optiona): List of features to include in few-shot prompt. Defaults to None.
             num_sentences (int): Number of sentences to use in the prompt. Defaults to 10.
             num_tags (int): Number of tags to use in the prompt. Defaults to 10.
@@ -118,11 +120,17 @@ class GPTLabeler(WebsiteLabeler):
         api_key = os.environ.get("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
 
+        # Categories
+        if define_categories:
+            categories = f"The categories and their descriptions are: {json.dumps(self.categories, indent=4)}"
+        else:
+            categories = f"The categories are {', '.join(self.categories.keys())}"
+
         # Construct the prompt
         self.system_prompt = {
             "role": "system",
-            "content": "You are an expert in website topic classification that accurately predicts the topic. Analyze the provided website data and classify it into relevant categories. The categores are: "
-            + ", ".join(self.categories)
+            "content": "You are an expert in website topic classification that accurately predicts the topic. Analyze the provided website data and classify it into relevant categories. "
+            + categories
             + ".\n\nOutput a JSON string with categories as keys and binary values (0 or 1) indicating if the webpage belongs to the topic. Always include all categories in the JSON output",
         }
 
@@ -159,9 +167,9 @@ class GPTLabeler(WebsiteLabeler):
             json.dump(self.labels, f)
 
     def _load_categories(self) -> list[str]:
-        path = os.path.join(self.data_dir, "meta", "categories.txt")
+        path = os.path.join(self.data_dir, "meta", "categories.json")
         with open(path) as f:
-            return [line.strip() for line in f]
+            return json.load(f)
 
     def _load_example_website(self) -> dict:
         """
@@ -238,14 +246,12 @@ class GPTLabeler(WebsiteLabeler):
         """
         # Construct the example
         website_features = self._extract_features(website)
+        user_prompt = json.dumps(website_features, ensure_ascii=False)
 
         # Define the messages to send to the API
         messages = [
             self.system_prompt,
-            {
-                "role": "user",
-                "content": json.dumps(website_features, ensure_ascii=False),
-            },
+            {"role": "user", "content": user_prompt},
         ]
 
         # Send the messages to the API
@@ -265,7 +271,9 @@ class GPTLabeler(WebsiteLabeler):
 
         # If valid format, one hot encode the categories
         if is_valid:
-            labels = [json_output.get(category, 0) for category in self.categories]
+            labels = [
+                json_output.get(category, 0) for category in self.categories.keys()
+            ]
         else:
             labels = [0] * len(self.categories)
 
@@ -295,7 +303,9 @@ class GPTLabeler(WebsiteLabeler):
         """
 
         # Returned valid categories
-        all_valid = all(category in self.categories for category in output.keys())
+        all_valid = all(
+            category in self.categories.keys() for category in output.keys()
+        )
         if not all_valid:
             return False, "Invalid categories"
 

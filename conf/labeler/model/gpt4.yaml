@@ -1,0 +1,4 @@
+# @package _global_
+
+labeler:
+  model: gpt-4-1106-preview
