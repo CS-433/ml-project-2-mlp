@@ -8,5 +8,5 @@ wandb:
   log_model: true # Log model as they get created during training
   offline: false # Whether to sync to W&B
   id: null # Use ID to resume training
-  group: null # Assign group
+  group: ${group} # Assign group
   tags: ${tags} # Log tags

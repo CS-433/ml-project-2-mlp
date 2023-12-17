@@ -1,5 +1,5 @@
 _target_: ml_project_2_mlp.datamodule.WebsiteDataModule
-data_split: [0.6, 0.2, 0.2] # Ratio of train-val-test split
+data_split: [0.6, 0.1, 0.3] # Ratio of train-val-test split
 batch_size: 32 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
 num_workers: 1 # Number of processes used for data loaders
 pin_memory: False # Whether to move data on GPU
