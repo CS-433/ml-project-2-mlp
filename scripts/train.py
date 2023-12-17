@@ -91,10 +91,15 @@ def main(cfg: DictConfig):
         train_metrics = {}
         log.info("Skipping finetuning!")
 
+    # Logging best model path
+    ckpt_path = trainer.checkpoint_callback.best_model_path
+    log.info("Saving best model path to hyperparameters!")
+    for logger in trainer.loggers:
+        logger.log_hyperparams({"best_model_path": ckpt_path})
+
     # Test model if specified
     if cfg.get("eval"):
         log.info("Starting testing!")
-        ckpt_path = trainer.checkpoint_callback.best_model_path
         if ckpt_path == "":
             log.warning("Best ckpt not found! Using current weights for testing...")
             ckpt_path = None

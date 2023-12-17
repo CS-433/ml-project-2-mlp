@@ -1,13 +1,12 @@
 """
 Script for evaluating the model.
 """
-import os
 from typing import List
 
 import hydra
 import lightning as L
 import rootutils
-from lightning import LightningDataModule, Trainer
+from lightning import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
@@ -16,8 +15,7 @@ import wandb
 from ml_project_2_mlp.data import WebsiteData
 from ml_project_2_mlp.labeler import WebsiteLabeler
 from ml_project_2_mlp.logger import RankedLogger
-from ml_project_2_mlp.model import Homepage2VecModule
-from ml_project_2_mlp.utils import instantiate_loggers, log_hyperparameters
+from ml_project_2_mlp.utils import instantiate_loggers
 
 # Setup root environment
 root_path = rootutils.setup_root(__file__)
@@ -59,13 +57,6 @@ def main(cfg: DictConfig):
         resume="must",
         job_type="eval",
     )
-    artifact = run.use_artifact(cfg.wandb_ckpt, type="model")
-    artifact_dir = artifact.download()
-
-    # Load homepage2vec module from checkpoint
-    model = Homepage2VecModule.load_from_checkpoint(
-        os.path.join(artifact_dir, "model.ckpt")
-    )
 
     # Instantiate data
     log.info(f"Instantiating data <{cfg.data._target_}>")
@@ -81,6 +72,10 @@ def main(cfg: DictConfig):
         cfg.datamodule, data=data, labeler=labeler
     )
 
+    # Instantaite model module
+    log.info(f"Instantiating model <{cfg.model._target_}>")
+    model: LightningModule = hydra.utils.instantiate(cfg.model)
+
     # Instantiating loggers for Lightning Trainer
     log.info("Instantiating loggers...")
     logger: List[Logger] = instantiate_loggers(cfg.get("logger"))
@@ -90,7 +85,8 @@ def main(cfg: DictConfig):
     trainer: Trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
 
     log.info("Testing model!")
-    trainer.test(model=model, datamodule=datamodule)
+    ckpt_dir = run.config.best_model_path
+    trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_dir)
 
     # Finish wandb run
     wandb.finish()
