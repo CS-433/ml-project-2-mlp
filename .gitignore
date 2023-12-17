@@ -4,7 +4,7 @@
 /outputs
 /logs
 /artifacts
-/wandb
+**/wandb
 /conf/local/*
 
 !.gitkeep
