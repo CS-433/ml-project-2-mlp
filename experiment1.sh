@@ -5,14 +5,15 @@ with annotations from all GPT labelers and the crowdsourced human
 labels.
 '
 
-group=exp1
+tuned=false
+group="exp1"
 
 # Pre-trained Homepage2Vec model
 poetry run train \
     data=original \
     labeler=human \
     logger=wandb \
-    logger.wandb.id=$group-pretrained \
+    logger.wandb.name=$group-pretrained \
     finetune=false \
     eval=true \
     group=$group \
@@ -22,8 +23,7 @@ poetry run train \
     data=original \
     labeler=human \
     logger=wandb \
-    logger.wandb.id=$group-human \
-    search=optuna \
+    logger.wandb.name=$group-human \
     eval=true \
     group=$group
 
@@ -44,9 +44,6 @@ do
         data=original \
         labeler=$labeler \
         logger=wandb \
-        search=optuna \
-        logger.wandb.id=$group-$labeler \
+        logger.wandb.name=$group-$labeler \
         group=$group
-
-    poetry run eval run_id=$group-$labeler
 done
