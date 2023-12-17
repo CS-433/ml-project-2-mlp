@@ -72,10 +72,7 @@ def main(cfg: DictConfig):
 
     setup_dict = {
         "cfg": cfg,
-        "datamodule": datamodule,
         "model": model,
-        "callbacks": callbacks,
-        "logger": logger,
         "trainer": trainer,
     }
 
@@ -85,7 +82,7 @@ def main(cfg: DictConfig):
         utils.log_hyperparameters(setup_dict)
 
     # Train model
-    if cfg.finetune:
+    if cfg.get("finetune"):
         log.info("Starting training!")
         trainer.fit(model=model, datamodule=datamodule)
 
@@ -95,20 +92,21 @@ def main(cfg: DictConfig):
         log.info("Skipping finetuning!")
 
     # Test model if specified
-    if cfg.get("test"):
+    if cfg.get("eval"):
         log.info("Starting testing!")
         ckpt_path = trainer.checkpoint_callback.best_model_path
         if ckpt_path == "":
             log.warning("Best ckpt not found! Using current weights for testing...")
             ckpt_path = None
         trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
+        test_metrics = trainer.callback_metrics
         log.info(f"Best ckpt path: {ckpt_path}")
-
-    test_metrics = trainer.callback_metrics
-
-    metric_dict = {**train_metrics, **test_metrics}
+    else:
+        test_metrics = {}
+        log.info("Skipping testing!")
 
     # For hydra-optuna integration
+    metric_dict = {**train_metrics, **test_metrics}
     metric_value = utils.get_metric_value(
         metric_dict=metric_dict, metric_name=cfg.get("optimized_metric")
     )
