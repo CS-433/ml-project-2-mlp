@@ -1,4 +1,3 @@
-import os
 from typing import List, Tuple
 
 import torch
@@ -8,8 +7,6 @@ from torchvision.transforms import transforms
 
 from ml_project_2_mlp.data import WebsiteData
 from ml_project_2_mlp.labeler import WebsiteLabeler
-
-from .utils import download_if_not_present, load
 
 
 class TorchDataset(Dataset):
@@ -66,12 +63,24 @@ class WebsiteDataModule(LightningDataModule):
 
     def setup(self, stage: str | None = None):
         # Load the embeddings and labels
-        self.embeddings = self.hparams.data.get_embeddings()
-        self.labels = self.hparams.labeler.get_labels()
+        embeddings = self.hparams.data.get_embeddings()
+        labels = self.hparams.labeler.get_labels()
 
-        # Convert to list of lists
-        self.embeddings = [embedding.tolist() for embedding in self.embeddings.values()]
-        self.labels = [labels["labels"] for labels in self.labels.values()]
+        # Convert keys to integers
+        labels = {int(k): v for k, v in labels.items()}
+
+        # Filter out invalid labels for GPT labelers
+        if self.hparams.labeler.name != "human":
+            labels = {k: v for k, v in labels.items() if v["is_valid"]}
+
+        # Match the embeddings and labels
+        label_wids = set(labels.keys())
+        embeddings_wids = set(embeddings.keys())
+        matched_wids = set(label_wids) & set(embeddings_wids)
+
+        # Filter the embeddings and labels and convert to list
+        self.embeddings = [embeddings[wid].tolist() for wid in matched_wids]
+        self.labels = [labels[wid]["labels"] for wid in matched_wids]
 
         # Convert to float tensor
         self.embeddings = torch.FloatTensor(self.embeddings)
