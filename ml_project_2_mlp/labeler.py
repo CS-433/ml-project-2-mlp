@@ -28,7 +28,9 @@ class WebsiteLabeler:
             "labels",
             self.name,
         )
-        self.labels_path = os.path.join(self.labels_dir, f"{self.data.name}.json")
+        self.labels_path = os.path.join(
+            self.labels_dir, f"{self.data.name_subset}.json"
+        )
         os.makedirs(self.labels_dir, exist_ok=True)
 
     def get_labels(self) -> dict:
@@ -119,7 +121,9 @@ class GPTLabeler(WebsiteLabeler):
         # Construct the prompt
         self.system_prompt = {
             "role": "system",
-            "content": "You are an expert in website topic classification that accurately predicts the topic of a webpage based on features of the website, such as the TLD, domain, meta-tags, text, and more. Analyze the provided website data and classify it into relevant categories. Output a JSON string with categories as keys and binary values (0 or 1) indicating relevance.",
+            "content": "You are an expert in website topic classification that accurately predicts the topic. Analyze the provided website data and classify it into relevant categories. The categores are: "
+            + ", ".join(self.categories)
+            + ".\n\nOutput a JSON string with categories as keys and binary values (0 or 1) indicating if the webpage belongs to the topic. Always include all categories in the JSON output",
         }
 
         # Add few-shot example to prompt
@@ -272,6 +276,8 @@ class GPTLabeler(WebsiteLabeler):
             "is_valid": is_valid,
             "reason_invalid": reason_invalid,
             "duration": duration,
+            "prompt_tokens": response.usage.prompt_tokens,
+            "completion_tokens": response.usage.completion_tokens,
         }
 
         return output
