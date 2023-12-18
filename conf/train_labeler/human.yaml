@@ -1,0 +1,5 @@
+defaults:
+  - base
+
+name: human
+_target_: ml_project_2_mlp.labeler.HumanLabeler

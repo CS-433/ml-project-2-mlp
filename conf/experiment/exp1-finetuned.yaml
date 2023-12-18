@@ -1,0 +1,14 @@
+# @package _global_
+
+# Run this experiment with:
+# poetry run train experiment=example
+
+defaults:
+  - override /train_data: original
+  - override /train_labeler: ???
+  - override /search: optuna
+  - override /logger: wandb
+
+# W&B configs
+group: exp1
+tags: [finetuned]

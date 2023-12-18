@@ -1,0 +1,12 @@
+# @package _global_
+
+labeler:
+  features:
+    - tld
+    - domain
+    - metatags
+    - title
+    - description
+    - keywords
+    - links
+    - text

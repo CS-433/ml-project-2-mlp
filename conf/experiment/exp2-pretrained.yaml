@@ -1,0 +1,20 @@
+# @package _global_
+
+# Run this experiment with:
+# poetry run train experiment=example
+
+defaults:
+  - override /train_data: original
+  - override /train_labeler: human
+  - override /logger: wandb
+
+# W&B configs
+group: exp2
+tags: [pretrained]
+
+# Use pre-trained weights
+finetune: false
+
+# Test on 70% of original
+test_datamodule:
+  data_split: [0.0, 0.3, 0.7]

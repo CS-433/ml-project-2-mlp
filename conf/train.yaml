@@ -3,16 +3,19 @@
 # Default configurations (precendence in reverse order)
 defaults:
   - _self_
-  - data: ???
-  - labeler: ???
+  - train_data: ???
+  - train_labeler: ???
+  - test_data: original
+  - test_labeler: human
+  - train_datamodule: default
+  - test_datamodule: default
   - model: homepage2vec
-  - logger: null
-  - datamodule: default
   - callbacks: default
   - trainer: default
   - paths: default
   - hydra: default
   - extras: default
+  - logger: null
   - search: null
   - experiment: null
   - optional local: default
@@ -26,8 +29,8 @@ tags: [dev]
 # Associated group (logged to W&B)
 group: null
 
-# Whether to also evaluate the model on best performing model
-eval: false
+# Whether to also evaluate the model on the test split
+eval: true
 
 # Random seed for reproducibility
 seed: 42

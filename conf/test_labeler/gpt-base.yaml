@@ -1,0 +1,20 @@
+defaults:
+  - base
+
+# Number of sentence to include in prompt
+num_sentences: 100
+num_keywords: 50
+num_links: 50
+num_tags: 10
+
+# Whether to define the categories
+define_categories: false
+
+# Whether to re-run the labeling if already exists
+relabel: false
+
+# Use global seed
+seed: ${seed}
+
+# Class to instantiate
+_target_: ml_project_2_mlp.labeler.GPTLabeler

@@ -4,10 +4,13 @@
 # poetry run train experiment=example
 
 defaults:
-  - override /data: crowdsourced
+  - override /train_data: original
+  - override /train_labeler: human
   - override /logger: wandb
 
-# Experiment tags
-tags: ["baseline"]
+# W&B configs
+group: exp1
+tags: [pretrained]
 
+# Use pre-trained weights
 finetune: false

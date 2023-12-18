@@ -1,0 +1,5 @@
+defaults:
+  - base
+
+name: curlie
+num_samples: 10000

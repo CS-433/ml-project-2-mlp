@@ -1,0 +1,21 @@
+# @package _global_
+
+# Run this experiment with:
+# poetry run train experiment=example
+
+defaults:
+  - override /train_data: curlie
+  - override /train_labeler: ???
+  - override /search: optuna
+  - override /logger: wandb
+
+# W&B configs
+group: exp2
+tags: [finetuned]
+
+# Train 100% curlie data, validate 30% of original, test 70% of original
+train_datamodule:
+  data_split: [1.0, 0, 0]
+
+test_datamodule:
+  data_split: [0.0, 0.3, 0.7]
