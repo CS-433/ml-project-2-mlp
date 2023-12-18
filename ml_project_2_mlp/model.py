@@ -2,18 +2,21 @@
 Module containing the `LightningModule` for the Homepage2Vec model.
 """
 
+import json
 import os
 from typing import Any, Dict, List, Tuple
 
+import pandas as pd
 import torch
 from lightning import LightningModule
-from torchmetrics import MaxMetric, MeanMetric, Metric
+from sklearn.metrics import classification_report
+from torchmetrics import ConfusionMatrix, MaxMetric, MeanMetric, Metric
 from torchmetrics.classification import MultilabelAccuracy as Accuracy
 from torchmetrics.classification import MultilabelF1Score as F1
 from torchmetrics.classification import MultilabelPrecision as Precision
 from torchmetrics.classification import MultilabelRecall as Recall
 
-from .homepage2vec.model import SimpleClassifier, WebsiteClassifier
+from .homepage2vec.model import SimpleClassifier
 from .metrics import LabelsPerPage
 
 
@@ -27,6 +30,8 @@ class Homepage2VecModule(LightningModule):
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
         threshold: float,
+        pos_ratio: list[float],
+        calibrated: bool = True,
     ) -> None:
         """Initialize a `Homepage2VecLitModule`.
 
@@ -42,23 +47,19 @@ class Homepage2VecModule(LightningModule):
         # also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
-        # Load website classifier (feature extractor)
-        self.website_clf = WebsiteClassifier(
-            model_dir=self.hparams.model_dir
-        )  # Feature extractor
-        self.input_dim = self.website_clf.input_dim
-        self.output_dim = self.website_clf.output_dim
+        self.input_dim = 4665
+        self.output_dim = 14
 
         # Load pre-trained model (classification head)
-        weight_path = os.path.join(self.hparams.model_dir, "homepage2vec", "model.pt")
+        weight_path = os.path.join(self.hparams.model_dir, "model.pt")
         model_tensor = torch.load(weight_path, map_location=self.hparams.device)
         self.model = SimpleClassifier(
-            input_dim=self.website_clf.input_dim, output_dim=self.website_clf.output_dim
+            input_dim=self.input_dim, output_dim=self.output_dim
         )
         self.model.load_state_dict(model_tensor)
 
         # Loss function
-        self.criterion = torch.nn.BCEWithLogitsLoss()
+        self.criterion = torch.nn.BCEWithLogitsLoss(pos_weight=self.hparams.pos_ratio)
 
         # Setup metric kwargs
         clf_metrics_kwargs = {
@@ -88,13 +89,24 @@ class Homepage2VecModule(LightningModule):
 
         # Testing metrics
         self.test_metrics = [
-            ("acc", Accuracy, clf_metrics_kwargs),
             ("f1", F1, clf_metrics_kwargs),
+            ("acc", Accuracy, clf_metrics_kwargs),
             ("precision", Precision, clf_metrics_kwargs),
             ("recall", Recall, clf_metrics_kwargs),
             ("lpp", LabelsPerPage, None),
             ("loss", MeanMetric, None),
         ]
+
+        # Confusion matrix
+        cm_kwargs = {
+            "num_labels": self.output_dim,
+            "task": "multilabel",
+            "threshold": self.hparams.threshold,
+        }
+        self.test_cm = ConfusionMatrix(**cm_kwargs)
+        self.test_preds = []
+        self.test_targets = []
+
         self._set_metrics(self.test_metrics, "test")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -128,6 +140,11 @@ class Homepage2VecModule(LightningModule):
 
         # Returns raw logits and embeddings
         logits, _ = self.forward(x)
+        logits = torch.sigmoid(logits)
+
+        # if self.hparams.calibrated:
+        #     pos_ratio = torch.tensor(self.hparams.pos_ratio)
+        #     logits = logits / (logits + pos_ratio * (1 - logits))
 
         # Cast labels from floats to longs for computing metrics
         y = y.long()
@@ -203,6 +220,49 @@ class Homepage2VecModule(LightningModule):
 
         # Update and log metrics
         self._update_log_metrics(self.test_metrics, logits, targets, "test")
+
+        # Accumulate predictions and targets for computing metrics at the end of the epoch
+        preds = torch.sigmoid(logits) > self.hparams.threshold
+        self.test_preds.append(preds)
+        self.test_targets.append(targets)
+
+        # Update confusion matrix
+        self.test_cm.update(logits, targets)
+
+    def on_test_epoch_end(self) -> None:
+        """ """
+        preds = torch.cat(self.test_preds).int()
+        targets = torch.cat(self.test_targets)
+
+        test_report = classification_report(
+            preds,
+            targets,
+            output_dict=True,
+        )
+        test_report_df = (
+            pd.DataFrame(test_report)
+            .T.reset_index()
+            .rename({"index": "category"}, axis=1)
+        )
+
+        # Compute confusion matrix
+        test_cms = self.test_cm(preds, targets)
+        rows = []
+        for i, test_cm in enumerate(test_cms):
+            test_cm = test_cm.cpu().numpy()
+            tn, fp, tp, fn = test_cm[0, 0], test_cm[0, 1], test_cm[1, 0], test_cm[1, 1]
+            rows.append({"category": i, "tn": tn, "fp": fp, "tp": tp, "fn": fn})
+        test_cm_df = pd.DataFrame(rows)
+
+        for logger in self.loggers:
+            logger.experiment.summary["test/report"] = json.dumps(
+                test_report_df.to_dict()
+            )
+            logger.experiment.summary["test/cm"] = json.dumps(test_cm_df.to_dict())
+            logger.experiment.summary["test/preds"] = json.dumps(preds.tolist())
+            logger.experiment.summary["test/targets"] = json.dumps(targets.tolist())
+
+        self.test_preds, self.test_targets = [], []
 
     def setup(self, stage: str) -> None:
         """
