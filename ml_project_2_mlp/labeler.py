@@ -3,6 +3,7 @@ import logging
 import os
 import time
 
+import numpy as np
 from openai import OpenAI
 from tqdm import tqdm
 
@@ -33,6 +34,9 @@ class WebsiteLabeler:
         )
         os.makedirs(self.labels_dir, exist_ok=True)
 
+        # Load categories
+        self.categories = self._load_categories()
+
     def get_labels(self) -> dict:
         """
         Gets the labels for the data.
@@ -41,6 +45,27 @@ class WebsiteLabeler:
             labels (list[dict]): List of labels for the data.
         """
         return self.labels
+
+    def get_class_dist(self, normalise: bool = True) -> dict[str, float]:
+        """
+        Returns the class distribution of the labels.
+
+        Returns:
+            class_dist (list[float]): List with the class distribution.
+        """
+        categories = list(self.categories.keys())
+        labels = np.array([website["labels"] for website in self.labels.values()])
+        class_dist = labels.sum(axis=0)  # Counts per category
+
+        if normalise:
+            class_dist = class_dist / class_dist.sum()
+
+        return {category: freq for category, freq in zip(categories, class_dist)}
+
+    def _load_categories(self) -> list[str]:
+        path = os.path.join(self.data_dir, "meta", "categories.json")
+        with open(path) as f:
+            return json.load(f)
 
     def _load_labels(self) -> dict:
         """
@@ -108,9 +133,6 @@ class GPTLabeler(WebsiteLabeler):
         self.model = model
         self.seed = seed
 
-        # Load categories
-        self.categories = self._load_categories()
-
         # Load the labels if they exist
         if not relabel and os.path.exists(self.labels_path):
             self.labels = self._load_labels()
@@ -165,11 +187,6 @@ class GPTLabeler(WebsiteLabeler):
         assert self.labels is not None
         with open(self.labels_path, "w") as f:
             json.dump(self.labels, f)
-
-    def _load_categories(self) -> list[str]:
-        path = os.path.join(self.data_dir, "meta", "categories.json")
-        with open(path) as f:
-            return json.load(f)
 
     def _load_example_website(self) -> dict:
         """
