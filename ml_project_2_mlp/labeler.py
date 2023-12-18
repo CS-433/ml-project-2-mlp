@@ -58,7 +58,7 @@ class WebsiteLabeler:
         class_dist = labels.sum(axis=0)  # Counts per category
 
         if normalise:
-            class_dist = class_dist / class_dist.sum()
+            class_dist = class_dist / len(labels)
 
         return {category: freq for category, freq in zip(categories, class_dist)}
 
