@@ -14,10 +14,6 @@ data/features/
 data/labels/*
 !data/labels/human/
 
-# Ignore figures and tables in report
-/report/figures
-/report/tables
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
