@@ -48,7 +48,7 @@ class WebsiteData:
         os.makedirs(self.save_dir, exist_ok=True)
 
         # Init the embedder model
-        self.embedder = WebsiteClassifier(self.model_dir)
+        self.embedder = WebsiteClassifier(model_dir)
 
         # Load raw, scraped, processed and embed data
         self.raw_data = self._load_raw_data()

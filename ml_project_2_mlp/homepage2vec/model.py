@@ -11,6 +11,7 @@ import json
 import os
 import tempfile
 import uuid
+from typing import OrderedDict
 
 import numpy as np
 import torch
@@ -27,7 +28,12 @@ class WebsiteClassifier:
     """
 
     def __init__(
-        self, model_dir: str, device=None, cpu_threads_count=1, dataloader_workers=1
+        self,
+        model_dir: str,
+        device=None,
+        cpu_threads_count=1,
+        dataloader_workers=1,
+        state_dict: OrderedDict | None = None,
     ):
         self.input_dim = 4665
         self.output_dim = 14
@@ -60,17 +66,19 @@ class WebsiteClassifier:
                 self.device = "cpu"
                 torch.set_num_threads(cpu_threads_count)
 
-        # load pretrained model
-        model_path = os.path.join(model_dir, "homepage2vec")
-        weight_path = os.path.join(model_path, "model.pt")
-        model_tensor = torch.load(weight_path, map_location=torch.device(self.device))
+        # Load state dict if not specified
+        if not state_dict:
+            weight_path = os.path.join(model_dir, "model.pt")
+            state_dict = torch.load(weight_path, map_location=torch.device(self.device))
+
+        # Load pretrained model
         self.model = SimpleClassifier(self.input_dim, self.output_dim)
-        self.model.load_state_dict(model_tensor)
+        self.model.load_state_dict(state_dict)
 
         # features used in training
         self.features_order = []
         self.features_dim = {}
-        feature_path = os.path.join(model_path, "features.txt")
+        feature_path = os.path.join(model_dir, "features.txt")
         with open(feature_path, "r") as file:
             for f in file:
                 name = f.split(" ")[0]
