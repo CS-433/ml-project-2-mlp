@@ -73,7 +73,12 @@ def extras(cfg: DictConfig) -> None:
 def print_config_tree(
     cfg: DictConfig,
     print_order: Sequence[str] = (
-        "data",
+        "train_data",
+        "test_data",
+        "train_labeler",
+        "test_labeler",
+        "train_datamodule",
+        "test_datamodule",
         "model",
         "callbacks",
         "logger",
@@ -185,9 +190,12 @@ def log_hyperparameters(setup_dict: dict) -> None:
     hparams["seed"] = cfg.get("seed")
 
     # Save model, data, trainer and callback configs
-    hparams["data"] = cfg["data"]
-    hparams["labeler"] = cfg["labeler"]
-    hparams["datamodule"] = cfg["datamodule"]
+    hparams["train_data"] = cfg["train_data"]
+    hparams["test_data"] = cfg["test_data"]
+    hparams["train_labeler"] = cfg["train_labeler"]
+    hparams["test_labeler"] = cfg["test_labeler"]
+    hparams["train_datamodule"] = cfg["train_datamodule"]
+    hparams["test_datamodule"] = cfg["test_datamodule"]
     hparams["model"] = cfg["model"]
     hparams["trainer"] = cfg["trainer"]
     hparams["callbacks"] = cfg.get("callbacks")
