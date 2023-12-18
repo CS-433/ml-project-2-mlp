@@ -10,9 +10,9 @@
 !.gitkeep
 
 # Ignore data, but not raw data
-data/*
-!data/raw/
-!data/meta/
+data/features/
+data/labels/*
+!data/labels/human/
 
 # Ignore figures and tables in report
 /report/figures

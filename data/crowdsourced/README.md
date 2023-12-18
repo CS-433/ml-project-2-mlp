@@ -1,0 +1,2 @@
+### About
+This folder contains the original crowdsourced data provided by the authors of Homepage2vec paper. It should have around 800 websites annotated by three independent labelers. We preprocess this data so that for each website, we have a single label. See more in the [preprocessing notebook](../../notebooks/preprocessing.ipynb).
