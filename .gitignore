@@ -10,9 +10,18 @@
 !.gitkeep
 
 # Ignore data, but not raw data
+data/*
 data/features/
 data/labels/*
+!data/raw/
 !data/labels/human/
+!data/meta/
+
+**/mika*
+
+# Ignore figures and tables in report
+/report/figures
+/report/tables
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
