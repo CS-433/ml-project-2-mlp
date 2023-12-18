@@ -140,8 +140,8 @@ class Homepage2VecModule(LightningModule):
 
         # Returns raw logits and embeddings
         logits, _ = self.forward(x)
-        logits = torch.sigmoid(logits)
 
+        # logits = torch.sigmoid(logits)
         # if self.hparams.calibrated:
         #     pos_ratio = torch.tensor(self.hparams.pos_ratio)
         #     logits = logits / (logits + pos_ratio * (1 - logits))
@@ -225,9 +225,6 @@ class Homepage2VecModule(LightningModule):
         preds = torch.sigmoid(logits) > self.hparams.threshold
         self.test_preds.append(preds)
         self.test_targets.append(targets)
-
-        # Update confusion matrix
-        self.test_cm.update(logits, targets)
 
     def on_test_epoch_end(self) -> None:
         """ """
