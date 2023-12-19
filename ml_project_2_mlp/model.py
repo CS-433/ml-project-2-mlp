@@ -104,6 +104,7 @@ class Homepage2VecModule(LightningModule):
             "threshold": self.hparams.threshold,
         }
         self.test_cm = ConfusionMatrix(**cm_kwargs)
+        self.test_probs = []
         self.test_preds = []
         self.test_targets = []
 
@@ -222,13 +223,16 @@ class Homepage2VecModule(LightningModule):
         self._update_log_metrics(self.test_metrics, logits, targets, "test")
 
         # Accumulate predictions and targets for computing metrics at the end of the epoch
-        preds = torch.sigmoid(logits) > self.hparams.threshold
+        probs = torch.sigmoid(logits)
+        preds = (probs > self.hparams.threshold).int()
+        self.test_probs.append(probs)
         self.test_preds.append(preds)
         self.test_targets.append(targets)
 
     def on_test_epoch_end(self) -> None:
         """ """
-        preds = torch.cat(self.test_preds).int()
+        probs = torch.cat(self.test_probs)
+        preds = torch.cat(self.test_preds)
         targets = torch.cat(self.test_targets)
 
         test_report = classification_report(
@@ -256,6 +260,7 @@ class Homepage2VecModule(LightningModule):
                 test_report_df.to_dict()
             )
             logger.experiment.summary["test/cm"] = json.dumps(test_cm_df.to_dict())
+            logger.experiment.summary["test/probs"] = json.dumps(probs.tolist())
             logger.experiment.summary["test/preds"] = json.dumps(preds.tolist())
             logger.experiment.summary["test/targets"] = json.dumps(targets.tolist())
 
