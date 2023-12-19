@@ -1,56 +1,15 @@
-% Some important notes from the homepage2vec paper
-% 1) Intro
-% Before homepage2vec
-% - No multilingual models
-% - No embeddings based methods
-% - Usually paid services
-% With Homepage2vec
-% - multilingual -> great because out of top 10M websites, 40% are not in English
-% - embeddings based
-% - open source
-% - fast since you can run it locally, and do not have to use external API
+\section{Background}\label{sec:background}
 
-% 2) Related work
-% Related approaches
-% - manual approaches back in the days
-% - ML based methods that use contextual features of the given webpage
-% - Methods that also use for context the surrounding webpages, especially useful when the current page does not include that much info
-% - Methods that use vision features
-% - Recently, use of the LSTM, BERT, GRU architectures -> shown to increase performance -> however focus purely on English
+\textbf{Homepage2Vec} addresses the limitations of existing approaches to web page representation by introducing a multilingual, embeddings-based model. Prior to its development, no multilingual models or widely adopted embedding-based methods existed for web page analysis, often necessitating the use of paid services. Homepage2Vec revolutionizes this landscape by providing a multilingual, open-source solution based on embeddings. Additionally, the model is efficient, enabling local execution without external APIs, ensuring accessibility and speed for a diverse range of users.
 
-% Multilingual embeddings
-% - They are using XML-R, multi-lingual model, that has shown to be comparable to the monolingual models
+\texttt{Homepage2Vec} is trained on a publicly available website directory and corresponding labels called Curlie, maintained by a volunteer community. The directory comprises 3 million websites in 92 languages, labeled in hierarchical categories. After removing duplicates and retaining accessible sites, the dataset contains 886K entries. For classification, only top-level labels are considered, resulting in 14 classes.  The label distribution is imbalanced, with most websites categorized as Business (27\%), followed by Society (13.9\%) and Arts (9\%). The dataset is primarily single-labeled, with only 2.1\% of samples appearing in two or more taxonomy trees of the 14 top-level classes \cite{homepage2vec}.
+% The majority of websites are in English (40\%), followed by German (16\%), French (5\%), and Japanese (6\%).
 
-% 3) Dataset
-% - Curlie = community edited web directory -> 3M websites in 92 languages,
-% labeled in hierarchical categories, however they only used the top level categories
-% Originally, there were 15 top level categories, but they dropped "Regional"
-% - Majority of classes associated with Bussiness (27), Society (13.9) or Arts (9)
-% - 40% of the websites are in English, 16 % in German, 5% in french, 6% in Japanese
-% - Although each page may, in principle, have an arbitrary number of category labels, 
-% at the top level, the data is mostly single-labeled, with only 2.1% of samples appearing 
-% in two or more taxonomy trees of the 14 top-level classes.
+The model, after scraping a website's homepage, parses the raw HTML and URL into a one-dimensional embedding. Specifically, \textit{url}, \textit{title}, \textit{description}, \textit{keywords}, \textit{links}, and \textit{sentences} are embedded via the multilingual model XLM-R \cite{xmlr}, while \textit{tld} and \textit{metatags} are one-hot encoded based on a predefined list of the most common top-level domains (excluding regional ones) and meta-tags. For features resulting in multiple embeddings, such as sentences, the mean is taken. Finally, all embeddings are concatenated, resulting in an input dimension of $4665$. Optionally, a screenshot of the website can be used, embedded via ResNet-18 \cite{resnet}. The resulting embedding is then fed into a fully connected neural network with 2 hidden layers of sizes 1000 and 100, respectively, each followed by a ReLU activation function and dropout with a probability of $0.5$. Importantly, the outputs are treated separately, with each output transformed via sigmoid and interpreted as a probability for the given class.
 
-% 4) Method
-% - They embeded only the first 100 sentences since the embedding process is quite expensive
-% This was selected based on the validation set performance using the elbow method
-% - They use 19 most frequent domains exluding the domains that indicate country
-% - Title, description and keywords are used as well and should be very informative
-% - With the links, they use the anchor text and the 50 most frequent texts are used, again
-% this was selected using the elbow method
-
-% 5) Main limitations and challenges of homepage2vec
-% 
+Homepage2Vec, evaluated against an unbalanced Curlie test set, achieves a macro-averaged precision of $0.771$, recall of $0.549$, and an F1-score of $0.634$ \cite{homepage2vec}. While these results are promising, it is crucial to note that the majority of websites have at most one label. Therefore, the task is inherently easier than the one being addressed. To account for this, we evaluate the model on a crowdsourced dataset of 840 samples, where each website has an average of $2.5$ labels. We obtain a macro F1-score of $0.38$, serving as our baseline for further improvement using the proposed methods described in the following section.
 
 
-% Background:
-% - Homepage2Vec: Motivation, model, results + limitations (mismatch in label distribution between training and true)
-% - GPT annotations (references from literature <- for ludek)
-\section{background}\label{sec:background}
-\textbf{Homepage2Vec} addresses the limitations in existing approaches to web page representation by introducing a multilingual, embeddings-based model. Prior to its development, there were no multilingual models or widely adopted embedding-based methods for web page analysis. Often, web page analysis relied on paid services. Homepage2Vec revolutionizes this landscape by offering a multilingual, open-source solution based on embeddings. Additionally, the model is efficient, allowing for local execution without the need for external APIs, making it accessible and fast for a diverse range of users.
-
-\texttt{Homepage2Vec} is trained on Curlie which is a publicly available directory of websites and corresponding labels maintained by a volunteer community. As 
-
-
-The model first parses the raw html into \textit{top-level-domain}, \textit{domain}, \textit{metatags}, \textit{title}, \textit{description}, \textit{keywords}, \textit{links} and \textit{sentences}.
-
+% - GPT annotations 
+\textbf{GPT based labeling.} The utilization of GPT for labeling purposes emerges as a powerful approach for streamlined annotation. The autonomous capability of GPT to propose examples to itself is exemplified in \cite{prompt-tuning}. It is noteworthy that the efficacy of GPT-based labeling demonstrates an upward trajectory with an increased number of examples, as evidenced in \cite{reduce-labeling-cost}. However, it is essential to acknowledge the associated cost escalation. AnnoLM contributes a holistic framework for GPT-based annotations, shedding light on the noteworthy observation that the inclusion of GPT-generated reasoning behind label assignments enhances overall performance, as elucidated in \cite{annollm}. 
+Last but not the least, while GPT-based labeling has many advantages, relying on it during inference is not ideal due to the cost as well as the time. For this reason, as the previous works show \cite{reduce-labeling-cost,is-gpt3-good-annot}, much viable option is to use GPT generated labels to train a classifier that can be used for inference, which is the approach we take in this work.
