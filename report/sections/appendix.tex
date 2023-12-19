@@ -1,0 +1,66 @@
+\section{Additional Information}
+\label{app:prompt}
+This appendix details the GPT prompt used for website topic classification. 
+
+\textbf{System Prompt:} 
+\begin{quote}
+    You are an expert in website topic classification that accurately predicts the topic. Analyze the provided website data and classify it into relevant categories.
+\end{quote}
+
+\begin{verbatim}
+["Arts", "Business", "Computers", "Games", "Health", "Home", 
+"Kids_and_Teens", "News", "Recreation", "Reference", "Science", 
+"Shopping", "Society", "Sports"]
+\end{verbatim}
+
+\textbf{Output Format:}
+\begin{quote}
+    Output a JSON string with categories as keys and binary values (0 or 1) indicating if the webpage belongs to the topic. Always include all categories in the JSON output. If the labeler is one-shot, the example website is included in the JSON output as well.
+\end{quote}
+
+\textbf{Example provided if the model is \texttt{1-shot}:}
+\begin{quote}
+    Given website data: \\
+    \begin{verbatim}
+{         
+    "title": "The New York Times ...",
+    "description": "Find breaking news ...",
+    "keywords": [
+        "breaking news",
+        "...",
+    ],
+    "links": [
+        "breaking-news",
+        "...",
+    ],
+    "tld": "com",
+    "domain": "nytimes.com",
+    "metatags": ["NYT", "..."],
+    "sentences": [
+        "Breaking news: A major political development reshapes the landscape in Washington.",
+        "...",
+    ]
+}
+        \end{verbatim}
+    A good classification is:
+    \begin{verbatim}
+{
+    "Arts": 1,
+    "Business": 1,
+    "Computers": 0,
+    "Games": 0,
+    "Health": 1,
+    "Home": 0,
+    "Kids_and_Teens": 0,
+    "News": 1,
+    "Recreation": 0,
+    "Reference": 0,
+    "Science": 1,
+    "Shopping": 0,
+    "Society": 1,
+    "Sports": 1
+}
+    \end{verbatim}
+\end{quote}
+
+
