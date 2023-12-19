@@ -5,6 +5,7 @@ import time
 
 import numpy as np
 from openai import OpenAI
+from regex import F
 from tqdm import tqdm
 
 from ml_project_2_mlp.data import WebsiteData
@@ -245,7 +246,19 @@ class GPTLabeler(WebsiteLabeler):
         labels = {}
         for wid, website in tqdm(websites.items()):
             # Label the website
-            label = self._label_website(website)
+            try:
+                label = self._label_website(website)
+            except Exception as e:
+                print(e)
+                label = {
+                    "features": None,
+                    "labels": None,
+                    "is_valid": False,
+                    "reason_invalid": "API error",
+                    "duration": None,
+                    "prompt_tokens": None,
+                    "completion_tokens": None,
+                }
 
             # Store the prediction
             labels[wid] = label
