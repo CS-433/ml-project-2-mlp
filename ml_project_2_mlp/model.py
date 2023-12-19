@@ -31,7 +31,7 @@ class Homepage2VecModule(LightningModule):
         scheduler: torch.optim.lr_scheduler,
         threshold: float,
         pos_ratio: list[float],
-        calibrated: bool = True,
+        calibrated: bool = False,
     ) -> None:
         """Initialize a `Homepage2VecLitModule`.
 
@@ -142,11 +142,6 @@ class Homepage2VecModule(LightningModule):
         # Returns raw logits and embeddings
         logits, _ = self.forward(x)
 
-        # logits = torch.sigmoid(logits)
-        # if self.hparams.calibrated:
-        #     pos_ratio = torch.tensor(self.hparams.pos_ratio)
-        #     logits = logits / (logits + pos_ratio * (1 - logits))
-
         # Cast labels from floats to longs for computing metrics
         y = y.long()
 
@@ -219,13 +214,21 @@ class Homepage2VecModule(LightningModule):
         # Forward pass
         logits, targets = self.model_step(batch)
 
-        # Update and log metrics
-        self._update_log_metrics(self.test_metrics, logits, targets, "test")
-
-        # Accumulate predictions and targets for computing metrics at the end of the epoch
+        # Compute simgoid probabilities
         probs = torch.sigmoid(logits)
-        preds = (probs > self.hparams.threshold).int()
+
+        # Calibrate probabilities
+        if self.hparams.calibrated:
+            pos_ratio = torch.tensor(self.hparams.pos_ratio)
+            probs = probs / (probs + pos_ratio * (1 - probs))
+
         self.test_probs.append(probs)
+
+        # Update and log metrics
+        self._update_log_metrics(self.test_metrics, probs, targets, "test")
+
+        # Compute predictions using threshold
+        preds = (probs > self.hparams.threshold).int()
         self.test_preds.append(preds)
         self.test_targets.append(targets)
 
