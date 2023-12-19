@@ -26,39 +26,28 @@ You are an expert in website topic classification that accurately predicts the t
     "Sports"
 ]
 
-Output a JSON string with categories as keys and binary values (0 or 1) indicating if the webpage belongs to the topic. Always include all categories in the JSON output. If the labeler is one-shot, the example website is included in the JSON output as well.
+Output a JSON string with categories as keys
+and binary values (0 or 1) indicating if the 
+webpage belongs to the topic. 
+
+Always include all categories in the JSON
+output.
 \end{lstlisting}
-
-\textbf{Output Format:}
-\begin{quote}
-\end{quote}
-
-\textbf{Example provided if the model is \texttt{1-shot}:}
-\begin{quote}
-    Given website data: \\
-    \begin{verbatim}
+\textbf{Example for a \texttt{1-shot} model:}
+\begin{lstlisting}
+Given website data:
 {         
     "title": "The New York Times ...",
     "description": "Find breaking news ...",
     "keywords": [
-        "breaking news",
-        "...",
-    ],
-    "links": [
-        "breaking-news",
-        "...",
-    ],
+        "breaking news", "...",],
+    "links": ["breaking-news", "...",],
     "tld": "com",
     "domain": "nytimes.com",
     "metatags": ["NYT", "..."],
-    "sentences": [
-        "Breaking news: A major political development reshapes the landscape in Washington.",
-        "...",
-    ]
+    "sentences": ["Breaking news: A major political development reshapes the landscape in Washington.", "...",]
 }
-        \end{verbatim}
     A good classification is:
-    \begin{verbatim}
 {
     "Arts": 1,
     "Business": 1,
@@ -75,6 +64,6 @@ Output a JSON string with categories as keys and binary values (0 or 1) indicati
     "Society": 1,
     "Sports": 1
 }
-    \end{verbatim}
-\end{quote}
+\end{lstlisting}
+
 
