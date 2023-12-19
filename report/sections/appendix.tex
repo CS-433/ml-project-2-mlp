@@ -4,18 +4,33 @@ This appendix details the GPT prompt used for website topic classification.
 
 \textbf{System Prompt:} 
 \begin{quote}
-    You are an expert in website topic classification that accurately predicts the topic. Analyze the provided website data and classify it into relevant categories.
 \end{quote}
 
-\begin{verbatim}
-["Arts", "Business", "Computers", "Games", "Health", "Home", 
-"Kids_and_Teens", "News", "Recreation", "Reference", "Science", 
-"Shopping", "Society", "Sports"]
-\end{verbatim}
+\begin{lstlisting}
+You are an expert in website topic classification that accurately predicts the topic. Analyze the provided website data and classify it into relevant categories.
+
+[
+    "Arts",
+    "Business",
+    "Computers",
+    "Games",
+    "Health",
+    "Home", 
+    "Kids_and_Teens",
+    "News",
+    "Recreation",
+    "Reference",
+    "Science", 
+    "Shopping",
+    "Society",
+    "Sports"
+]
+
+Output a JSON string with categories as keys and binary values (0 or 1) indicating if the webpage belongs to the topic. Always include all categories in the JSON output. If the labeler is one-shot, the example website is included in the JSON output as well.
+\end{lstlisting}
 
 \textbf{Output Format:}
 \begin{quote}
-    Output a JSON string with categories as keys and binary values (0 or 1) indicating if the webpage belongs to the topic. Always include all categories in the JSON output. If the labeler is one-shot, the example website is included in the JSON output as well.
 \end{quote}
 
 \textbf{Example provided if the model is \texttt{1-shot}:}

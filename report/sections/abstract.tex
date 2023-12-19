@@ -1,7 +1,6 @@
 \begin{abstract}
-This study explores the application of Generative Pre-trained Transformers (GPT) models in automating the annotation process for multilingual multilabel website classification. 
-Leveraging advancements in natural language processing and the potential of GPT models, we address the resource-intensive and time-consuming nature of labeling tasks. 
-Focusing on the Homepage2vec \cite{homepage2vec} model trained on Curlie web directory data, our investigation aims to overcome limitations in single-label assignment prevalent in the open-source Curlie dataset. We utilize crowdsourced annotations for 800 Curlie websites to identify an optimal GPT labeler, fine-tune the Homepage2vec model, and evaluate its performance against human-annotated data. 
-Our contributions encompass demonstrating the effectiveness of GPT models in obtaining high-quality annotations, enhancing Homepage2vec's classification performance through GPT-annotated data fine-tuning, and releasing the \texttt{curlie-10k} dataset to foster further advancements in multilingual multilabel website classification research.
+
+This study explores the use of Large Language Models (LLMs) for creating a fine-tuning dataset to improve Homepage2Vec~\cite{homepage2vec}, a state-of-the-art model for multilingual, multilabel website classification. Addressing the single-label bias in the Curlie dataset used for initial training, we assess various LLM-based labelers and select the best one through comparison to crowdsourced annotations. We generate a new 10,000-website dataset, \texttt{curlie-gpt3.5-10k}, for fine-tuning Homepage2Vec. 
+Our contributions encompass demonstrating the effectiveness of LLMs in obtaining high-quality annotations, enhancing Homepage2vec's performance from 38\% to 42\% through fine-tuning, and, finally, releasing \texttt{curlie-gpt3.5-10k} to foster further advancements in multilingual multilabel website classification research.
 
 \end{abstract}
