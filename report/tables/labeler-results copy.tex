@@ -1,0 +1,29 @@
+\begin{table}[!ht]
+\centering
+\caption{\textbf{Labeler Statistics.}}
+\label{tab:labeler-results}
+\begin{tabular}{lllccc}
+\toprule
+ &  &  & LPP & Cost & M.-F1 \\
+ &  &  & ($\mu\pm\sigma$) & (\$) & (\%) \\
+\midrule
+\multirow[c]{6}{*}{
+    \rotatebox[origin=c]{90}{GPT-3.5}
+    } & \multirow[c]{2}{*}{C1} & 0-shot & 0.3 ± 0.6 & \textbf{0.36} & 15.96 \\
+ &  & 1-shot & 0.9 ± 0.9 & 0.48 & 23.26 \\
+ & \multirow[c]{2}{*}{C2} & 0-shot & 1.3 ± 0.9 & 0.42 & 37.59 \\
+ &  & 1-shot & 1.6 ± 1.1 & 0.63 & 38.69 \\
+ & \multirow[c]{2}{*}{C3} & 0-shot & 1.5 ± 1.0 & 0.57 & 37.24 \\
+ &  & 1-shot & 1.8 ± 1.2 & 0.80 & 37.70 \\
+\midrule
+\multirow[c]{6}{*}{
+    \rotatebox[origin=c]{90}{GPT-4}
+    } & \multirow[c]{2}{*}{C2} & 0-shot & 2.1 ± 1.0 & 5.26 & 45.39 \\
+ &  & 1-shot & 2.4 ± 1.2 & 7.25 & \textbf{45.93} \\
+& \multirow[c]{2}{*}{C2} & 0-shot & 2.1 ± 1.0 & 5.26 & 45.39 \\
+ &  & 1-shot & 2.4 ± 1.2 & 7.25 & 45.93 \\
+& \multirow[c]{2}{*}{C2} & 0-shot & 2.1 ± 1.0 & 5.26 & 45.39 \\
+ &  & 1-shot & 2.4 ± 1.2 & 7.25 & 45.93 \\
+\bottomrule
+\end{tabular}
+\end{table}

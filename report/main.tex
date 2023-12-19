@@ -10,6 +10,8 @@
 
 % Tables
 \usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{multicol}
 
 % Fonts
 \usepackage{fontspec}
@@ -19,6 +21,8 @@
     ItalicFont = {Times New Roman Italic}, 
     BoldItalicFont = {Times New Roman Bold Italic}
 ]
+
+\setlength{\parskip}{.5em}
 
 % ---- Main document
 \begin{document}
@@ -35,6 +39,8 @@
 \input{sections/introduction}
 \input{sections/background}
 \input{sections/methods}
+
+\input{sections/results}
 
 \newpage
 \bibliographystyle{IEEEtran}
