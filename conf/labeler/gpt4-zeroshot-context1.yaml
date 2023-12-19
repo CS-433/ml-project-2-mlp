@@ -1,0 +1,7 @@
+defaults:
+  - gpt-base
+  - model: gpt4
+  - shot: zeroshot
+  - context: context1
+
+name: gpt4-zeroshot-context1
