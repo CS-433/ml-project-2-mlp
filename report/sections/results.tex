@@ -1,19 +1,23 @@
 \section{Results}
 
-\subsection{Phase 1: LLM Labeling}
+\subsection*{Phase 1: LLM Labeling}
 
 \input{tables/labeler-results.tex}
 
-Table~\ref{tab:labeler-results} presents important statistics of the re-labelling of the original crowdsourced corpus of websites using the LLM labelers introduced in Section \textit{Link to Methods}.
+Table~\ref{tab:labeler-results} presents important statistics of the re-labelling of the original crowdsourced corpus of websites using the LLM labelers introduced in Section \ref{sec:methods}.
 
 % General Results: Consistency, Cost, Quality
-\textbf{Results.} Our findings demonstrate that LLM labelers can provide \textit{consistent}, \textit{cost-effective}, and \textit{high-quality} annotations for the complex task of multi-lingual, multi-label website topic classification. Remarkably, not a single incorrect output was produced, underscoring the reliability and consistency of LLM-generated annotations.
+\textbf{Results.} Our findings demonstrate that LLM labelers can provide \textit{consistent}, \textit{cost-effective}, and \textit{high-quality} annotations for the complex task of multi-lingual, multi-label website topic classification. 
+Remarkably, not a single incorrect output was produced, underscoring the reliability and consistency of LLM-generated annotations.
 
-In terms of cost, the original paper~\cite{homepage2vec} cites an annotation expense of approximately \$143 per 1000 pages. Our approach, utilising GPT-3.5 and GPT-4 labelers, drastically reduces this cost to an average of \$0.60 and \$6.30, respectively, achieving a reduction by factors of 238x and 23x.
+In terms of cost, the labaling of the original crowdsourced corpus cost \$327, approximately \$(check if it fits) per 1000 pages.
+Our approach, utilising GPT-3.5 and GPT-4 labelers, drastically reduces this cost to an average of
+% Update the average for gpt4
+ \$0.60 and \$6.30, respectively, achieving a reduction by factors of 217x and 21x.
 
 % Calculations
-% Human annotator cost: 327 USD % Pages annotated: 761 * 3 = 2283
-% Cost per 1k page: 1000 * 327 / 2283 = 143$
+% Human annotator cost: 327 USD % Pages annotated: 840 * 3 = 2520
+% Cost per 1k page: 1000 * 327 / 2520 = 130$
 
 % GPT labler cost/1k pages:
 % (0.36 + 0.48 + 0.42 + 0.63 + 0.57 + 0.80 + 5.26 + 7.25) / 8 = 2.6
@@ -25,59 +29,58 @@ In terms of cost, the original paper~\cite{homepage2vec} cites an annotation exp
 % (5.26 + 7.25) / 2 = 6.3
 
 % Cost reductions:
-% GPT-3.5: 143 / 0.6 = 238x
-% GPT-4: 143 / 6.3 = 22.7x
-% Calculations
-% Human annotator cost: 327 USD % Pages annotated: 761 * 3 = 2283
-% Cost per 1k page: 1000 * 327 / 2283 = 143$
+% GPT-3.5: 130 / 0.6 = 217x
+% GPT-4: 130 / 6.3 = 21x
 
-% GPT labler cost/1k pages:
-% (0.36 + 0.48 + 0.42 + 0.63 + 0.57 + 0.80 + 5.26 + 7.25) / 8 = 2.6
-
-% GPT-3.5 labler cost/1k pages:
-% (0.36 + 0.48 + 0.42 + 0.63 + 0.57 + 0.80) / 6 = 0.6
-
-% GPT-4 labler cost/1k pages:
-% (5.26 + 7.25) / 2 = 6.3
-
-% Cost reductions:
-% GPT-3.5: 143 / 0.6 = 238x
-% GPT-4: 143 / 6.3 = 22.7x
-
-Performance-wise, GPT-4 peaks at a 46\% macro F1 score using context 2 and 1-shot, outperforming the baseline of the pre-trained model. The improvements suggest that we can expect to improve the performance of the pre-trained model by fine-tuning it with the LLM labels if we can distil the knowledge from the LLMs into the pre-trained model - the goal of the second phase of our study.
+Performance-wise, GPT-4 labeler peaks at a 46\% macro F1 score using context 2 and 1-shot, outperforming the baseline of the pre-trained model. 
+The improvements suggest that we can expect to improve the performance of the pre-trained model by fine-tuning it with the LLM labels if we can distil the knowledge from the LLMs into the pre-trained model - the goal of the second phase of our study.
 
 % GPT labeler parameter grid
-\textbf{Labeler Parameter Grid.} Figure~\ref{fig:labelers-grid} visualises the effect of the labeler parameters on the macro F1 score. As expected, we find that the quality of the labels increases with the amount of context provided and the quality of the model used. Interestingly, the added features in context 3 (links and texts) do not increase the annotation quality, which is not surprising given the marginal improvements the original paper reported and the danger of confusing LLMs with prompts that are too complex as found in \textit{CITE}.
+\textbf{Labeler Parameter Grid.} Figure~\ref{fig:labelers-grid} visualises the effect of the labeler parameters on the macro F1 score. As expected, we find that the quality of the labels increases with the amount of context provided and the quality of the model used. 
+Interestingly, the added feature in the context3 (links and text) do not increase the annotation quality for the GPT-3.5, but do for the GPT-4. 
+We hypothesize that this is due to the fact that the smaller model can get confused with the the additional features that are very long compared to the prompt, while the larger model can handle the additional features better. 
+
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=.8\columnwidth]{./figures/labelers-grid.pdf}
-    \caption{\textbf{Labeler Parameter Grid.} The Figure displays the mean macro F1 score for all unique parameter combinations of the LLM labelers.}
+    \caption{\textbf{Labeler Parameter Grid:} Macro F1 score for all combinations of the LLM labeler parameters.}
+
     \label{fig:labelers-grid}
 \end{figure}
 
 % Cost-quality trade-off
-\textbf{Cost-Quality Trade-Off.} Our analysis reveals a direct correlation between label quality and cost, attributable to the use of longer prompts or more sophisticated models. The optimal compromise is achieved with a GPT-3.5 annotator utilizing context 2 and a few-shot example. This configuration ensures a robust label quality at 39\% (only a 15\% decrease) while cutting the cost per 1000 pages from \$7.25 to \$0.63 (a 91\% decrease). This GPT-3.5 annotator will be employed in the second phase of our study.
-
-\subsection{Phase 2: Knowledge Distillation}
-
-% TODO: Would be cool to compare the labelling statistics of the exact 10k subsplit (Curlie vs. GPT) -- for now we will proxy.
-
-The goal of the second phase of the study is to transfer the knowledge from the LLMs into the pre-trained model. To this end, we relabel a random subset of 10000 webpages from the Curlie dataset with the GPT-3.5 labeler from Phase 1 and fine-tune the pre-trained model on the new dataset. 
+\textbf{Cost-Quality Trade-Off.} 
+Out analysis reveals a positve trend between label quality and cost, attributable to the use of longer prompts or more sophisticated models.
+The optimal compromise is achieved with a GPT-3.5 annotator utilizing context 2 and a few-shot example. This configuration ensures a robust label quality at 39\% (only a 15\% decrease) while cutting the cost per 1000 pages from \$7.25 to \$0.63 (a 91\% decrease). 
+This GPT-3.5 annotator was used to label the texttt{curlie-gpt3.5-10k} dataset, which we use in the second phase of our study.
 
 % Curlie-10k dataset
-\textbf{Curlie-10k.} The re-labeled \texttt{curlie-10k} dataset contains 10000 webpages from the Curlie dataset, each annotated with multiple labels. The average number of topics assigned to a page is \textbf{1.6}, which is higher than the average of \textbf{1.07} for the original Curlie dataset. Figure~\ref{fig:curlie-10k-label-distribution} shows the distribution of the labels in the dataset. We observe that the distribution is similar to the original Curlie dataset.
+The average number of topics assigned to a page is \textbf{1.6}, which is higher than the average of \textbf{1.07} for the original Curlie dataset. 
+Figure~\ref{fig:label-distribution-comparison} shows the distribution of the labels in the re-labelled dataset compared to the original Curlie dataset.
+We observe that the number of labels increased for every class.
 
 \begin{figure}[!h]
     \centering
-    \includegraphics[width=.8\columnwidth]{./figures/curlie-label-distribution.pdf}
+    \includegraphics[width=.8\columnwidth]{./figures/class_distribution_comparison.pdf}
     \caption{\textbf{Curlie-10k Label Distributino.} We show the topic distribution of the Curlie-10k dataset.}
-    \label{fig:curlie-10k-label-distribution}
+    \label{fig:label-distribution-comparison}
 \end{figure}
 
 
+\subsection*{Phase 2: Knowledge Distillation}
+
+% TODO: Would be cool to compare the labelling statistics of the exact 10k subsplit (Curlie vs. GPT) -- for now we will proxy.
+
+The goal of the second phase of the study is to transfer the knowledge from the LLMs into the pre-trained model. 
+To this end, we use the \texttt{curlie-gpt3.5-10k} dataset for fine-tuning the pre-trained model.
+
+
 % Fine-tuning results
-\textbf{Finetuning.} Table~\ref{tab:finetune-results} shows the results of the fine-tuning experiment. We observe that the fine-tuned model increases the recall significantly from 39.4\% to 47.6\%, at the cost of a minor decrease in precision from 40.9\% to 40.2\%. This increases the overall macro F1 score from 39.2\% to 42.6\%, which is a 9\% improvement. We have shown that the approach of fine-tuning the pre-trained model with the LLM labels can improve the performance of the pre-trained by fine-tuning on a dataset that better resembles the true website topic classification.
+\textbf{Finetuning.} Table~\ref{tab:finetune-results} shows the results of the fine-tuning experiment. 
+We observe that the fine-tuned model increases the recall significantly from 39.4\% to 47.6\%, at the cost of a minor decrease in precision from 40.9\% to 40.2\%. 
+This increases the overall macro F1 score from 39.2\% to 42.6\%, which is a 9\% improvement. 
+We have shown that the approach of fine-tuning the pre-trained model with the LLM labels can improve the performance on the texttt{crowdsourced} dataset that better resembles the true website topic classification.
 
 % 0.391610 = 39.2% (Pre-trained Homepage2Vec)
 % 0.426289 = 42.6% (GPT-3.5)

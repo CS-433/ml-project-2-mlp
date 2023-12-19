@@ -6,7 +6,7 @@ We refer to this model as \texttt{baseline}.
 We can divide our work into two main phases: (1) obtaining high-quality annotations and (2) fine-tuning the baseline model with the obtained annotations. 
 In the following, we describe the methodology for each phase in detail.
 
-\subsection* {Phase 1: Obtaining High-Quality Annotations}
+\subsection* {Phase 1: LLM Labeling}
 In the first phase, we aim to obtion hight-quality GPT annotations measuring performance against human annotatated data.
 The orignal human labaled data comprises of 840 websites, anotated each by 3 diffrent annotators. 
 The measured inter-anotator agreement measured by the pairwise Cohen's kappa \cite{cohen-coef} is $0.2 \pm 0.02$, indicating low agreement. 
@@ -37,8 +37,10 @@ As the figure clearly indicates, the most useful features according to the homep
     \caption{Class distribution of the original dataset.}
     \label{fig:class_distribution}
 \end{figure}
-
+% Get rid of this
 Figure \ref{fig:class_distribution} illustrates the class distribution of the original dataset. It is imbalanced, with most websites falling into the \textit{Business} category, followed by \textit{Arts} and \textit{Society}. This imbalance, identified in Homepage2vec, negatively impacted model performance on minority classes.
+
+
 % 1. Step: Show that we can create high-quality annotations (measured against human annotations)
 % - introduce curlie (talk about features (missing values), embedding, label list_ , re-scrape + process + embeddin
 % ---> All this is pretty much in data, so transfer it here
@@ -49,7 +51,7 @@ Figure \ref{fig:class_distribution} illustrates the class distribution of the or
 % - evaluation procedure (macro f1, …)
 % - calibration (?)
 % TODO: this
-\subsection* {Phase 2: Fine-Tuning the Baseline Model}
+\subsection* {Phase 2: Knowledge Distillation}
 In the second phase, we fine-tune the baseline model with the obtained annotations from the \texttt{curlie-10k} dataset. And using the crowdsourced data as the test and validation set with 0.7/0.3 split.
 We also perform a hyperparmeter search to find the best hyperparameters for the fine-tuning process. 
 For this we employ Baeysian TPE samplerer from Optuna \cite{optuna} to efectively search the hyperparam space. 
