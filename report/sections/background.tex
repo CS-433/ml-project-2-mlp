@@ -1,48 +1,3 @@
-\documentclass[10pt,conference,compsocconf]{IEEEtran}
-
-% ---- Packages
-
-% Hyperlinks
-\usepackage{hyperref}
-
-% Figures
-\usepackage{graphicx}
-
-% Tables
-\usepackage{booktabs}
-
-% Fonts
-\usepackage{fontspec}
-\setmainfont{Times New Roman}[
-    SmallCapsFont = {Times New Roman},
-    BoldFont = {Times New Roman Bold}, 
-    ItalicFont = {Times New Roman Italic}, 
-    BoldItalicFont = {Times New Roman Bold Italic}
-]
-
-% ---- Main document
-\begin{document}
-
-\title{Improving SOTA for Multilingual Website Classification via GPT Annotated Data}
-
-\author{
-  Mika Senghaas, Peter Nutter, Ludek Cizinsky\\
-  \textit{Ecole Polytechnique Federale de Lausanne (EPFL)}\\
-}
-\maketitle
-
-\input{sections/abstract}
-\input{sections/introduction}
-% \input{sections/data}
-\input{sections/methods}
-
-\newpage
-\bibliographystyle{IEEEtran}
-\bibliography{literature}
-
-\end{document}
-
-
 % Some important notes from the homepage2vec paper
 % 1) Intro
 % Before homepage2vec
@@ -83,3 +38,19 @@
 % - Title, description and keywords are used as well and should be very informative
 % - With the links, they use the anchor text and the 50 most frequent texts are used, again
 % this was selected using the elbow method
+
+% 5) Main limitations and challenges of homepage2vec
+% 
+
+
+% Background:
+% - Homepage2Vec: Motivation, model, results + limitations (mismatch in label distribution between training and true)
+% - GPT annotations (references from literature <- for ludek)
+\section{background}\label{sec:background}
+\textbf{Homepage2Vec} addresses the limitations in existing approaches to web page representation by introducing a multilingual, embeddings-based model. Prior to its development, there were no multilingual models or widely adopted embedding-based methods for web page analysis. Often, web page analysis relied on paid services. Homepage2Vec revolutionizes this landscape by offering a multilingual, open-source solution based on embeddings. Additionally, the model is efficient, allowing for local execution without the need for external APIs, making it accessible and fast for a diverse range of users.
+
+\texttt{Homepage2Vec} is trained on Curlie which is a publicly available directory of websites and corresponding labels maintained by a volunteer community. As 
+
+
+The model first parses the raw html into \textit{top-level-domain}, \textit{domain}, \textit{metatags}, \textit{title}, \textit{description}, \textit{keywords}, \textit{links} and \textit{sentences}.
+

@@ -1,0 +1,29 @@
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Parameter} & \textbf{Variants} & \textbf{Description} \\
+        \midrule
+        \texttt{context} 
+            & \texttt{context1} & Uses the \texttt{tld}, \texttt{domain}, and \texttt{metatags} \\
+            
+            & \texttt{context2} & Same as \texttt{context1} plus \texttt{title}, \\ & & \texttt{description} and \texttt{keywords} \\
+            
+            & \texttt{context3} & Same as \texttt{context2} plus \texttt{links} and \\ & & \texttt{text}\\
+
+        \addlinespace
+        \texttt{model} 
+            & \texttt{gpt3.5} & Uses GPT-3.5 (\texttt{gpt-3.5-turbo-1106}) \\
+            
+            & \texttt{gpt4}   & Uses GPT-4 (\texttt{gpt-4-1106-preview}) \\
+        
+        \addlinespace
+        \texttt{fewshot} 
+            & \texttt{fewshot} & Injects an example website and label into \\ & & the system prompt \\
+            
+            & \texttt{zeroshot} & Does not inject any example website or \\ & & label into  the system prompt \\
+        \bottomrule
+    \end{tabular}
+    \caption{Description of Parameters and Variants}
+    \label{tab:parameters}
+\end{table}
