@@ -19,10 +19,6 @@ data/labels/*
 
 **/mika*
 
-# Ignore figures and tables in report
-/report/figures
-/report/tables
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
