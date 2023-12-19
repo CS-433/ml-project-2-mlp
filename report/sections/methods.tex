@@ -22,7 +22,7 @@ In the user promept we provided a JSON of the exctrated features, we considered 
 The smallest context \texttt{context1} includes the least amount of information about the website, making the classification faster and cheaper as less tokens are used and the \texttt{context3} having all the information about the website that was scraped.
 
 We also considered two versions of the GPT model an older GPT-3.5 model and a newer GPT-4 model, where the GPT-4 model is more expensive and slower to use.
-All variants of the Labelers can be found in \ref{tab:lebelers_setup}
+All variants of the Labelers can be found in Tabel \ref{tab:labelers_setup}
 % - introduce labelers (parameter dimensions), introduce prompt, one shot example:
 \input{tables/labelers_setup.tex}
 
@@ -56,5 +56,7 @@ For this we employ Baeysian TPE samplerer from Optuna \cite{optuna} to efectivel
 The hyperparam values are detailed in Table \ref{tab:hyperparameters}.
 \input{tables/hyperparameters.tex}
 
-The best performing model is chosen by performance on the validation set using the multi-label macro F1 score, which is the average of the F1 score of each class.
+The best performing model is chosen by performance on the validation set using the multi-label macro F1 score, which is the average of the F1 score of each class. 
+This model is then evaluated on the held out test set using macro F1, precision, recall, and accuracy.
+
 
