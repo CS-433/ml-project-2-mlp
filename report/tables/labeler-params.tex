@@ -1,31 +1,28 @@
-\begin{table}[htbp]
+\begin{table}[!ht]
     \centering
-    \caption{
-        Labeler Parameters
-    }
-
+    \caption{Labeler Parameters}
     \begin{tabular}{lll}
         \toprule
         \textbf{Parameter} & \textbf{Variants} & \textbf{Description} \\
         \midrule
         \texttt{context} 
-            & \texttt{context1} & Uses \texttt{tld}, \texttt{domain}, and \texttt{metatags} \\
+            & \texttt{context1} & \texttt{tld}, \texttt{domain}, and \texttt{metatags} \\
             
-            & \texttt{context2} & \texttt{context1} + \texttt{title}, \texttt{description} \\ & & and \texttt{keywords} \\
+            & \texttt{context2} & \texttt{context1}, \texttt{title},\\ & & \texttt{description}, \texttt{keywords} \\
             
-            & \texttt{context3} & \texttt{context2} + \texttt{links} and \texttt{text} \\
+            & \texttt{context3} & \texttt{context2}, \texttt{links} and \texttt{text} \\
 
         \addlinespace
         \texttt{model} 
-            & \texttt{gpt3.5} & Uses GPT-3.5 (\texttt{gpt-3.5-turbo-1106}) \\
+            & \texttt{gpt3.5} & \texttt{gpt-3.5-turbo-1106} \\
             
-            & \texttt{gpt4}   & Uses GPT-4 (\texttt{gpt-4-1106-preview}) \\
+            & \texttt{gpt4} & \texttt{gpt-4-1106-preview} \\
         
         \addlinespace
         \texttt{1-shot} 
-            & \texttt{1-shot} & Injects an example website and label into \\ & & the system prompt \\
+            & \texttt{1-shot} & Includes labeled example \\
             
-            & \texttt{0-shot} & Does not inject any example website or \\ & & label into  the system prompt \\
+            & \texttt{0-shot} & No labeled example \\
         \bottomrule
     
     \end{tabular}

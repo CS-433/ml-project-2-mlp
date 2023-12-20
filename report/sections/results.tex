@@ -36,7 +36,7 @@ Performance-wise, the best-performing labeler, GPT-4 with \texttt{context3} and 
 % GPT labeler parameter grid
 \textbf{Labeler Parameter Grid.} Figure~\ref{fig:labelers-grid} visualises the effect of the labeler parameters on the macro F1 score. As expected, we find that the quality of the labels increases with the amount of context provided and the quality of the model used. Interestingly, the added feature in the context3 (links and text) do not increase the annotation quality for the GPT-3.5, but do for the GPT-4. We hypothesise that this is due to the fact that the smaller model can get confused with the the additional features that are very long compared to the prompt, while the larger model is superior in handling the additional features.
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=.8\columnwidth]{figures/labeler-grid.pdf}
     \caption{\textbf{Labeler Parameter Grid.} The Figure displays the mean macro F1 score for all unique parameter combinations of the LLM labelers.}
@@ -50,7 +50,7 @@ Out analysis reveals a positve trend between label quality and cost, attributabl
 % Curlie-10k dataset
 The average number of topics assigned to a page is \textbf{1.6}, which is higher than the average of \textbf{1.07} for the original Curlie dataset. Figure~\ref{fig:label-distribution-comparison} shows the distribution of the labels in the re-labelled dataset compared to the original Curlie dataset. We observe that the number of labels increased for every class.
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=.8\columnwidth]{figures/class_distribution_comparison.pdf}
     \caption{\textbf{Curlie-10k Label Distributino.} We show the topic distribution of the Curlie-10k dataset.}
