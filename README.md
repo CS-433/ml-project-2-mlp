@@ -1,23 +1,27 @@
-# 🌐 Enhancing Homepage Topic Classification via LLM-augmented Datasets (WIP)
+# 🌐 Advancing Homepage2Vec with LLM-Generated Datasets for Multilingual Website Classification
 
-This project is being developed in collaboration with the [DLab](https://dlab.epfl.ch/) at EPFL as part of the [Machine Learning](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/) (CS-433) course. The project aims to explore the use of [Language Model Augmentation](https://arxiv.org/abs/2105.03075) (LLM) to improve the classification accuracy in low-resource webpage topics. The project is based on the paper [Homepage2Vec:  Language-Agnostic Website Embedding and Classification](https://arxiv.org/pdf/2201.03677.pdf) and the resulting library [Homepage2Vec](https://github.com/epfl-dlab/homepage2vec).
+This project was developed in collaboration with the Data Science Lab ([DLab](https://dlab.epfl.ch/)) at EPFL as part of the [Machine Learning](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/) (CS-433) course. We thank [Prof. Robert West](https://robertwest.ch/) for enabling the project and [Tiziano Piccardi](https://tizianopiccardi.github.io/) for his guidance and support throughout the project.
 
-## 🎯 Project Outline
+![Training Overview](report/figures/training-overview.png)
 
-The project is motivated by the following limitations in the original Homepage2Vec paper:
 
-1. The Curlie dataset that was used for training contains mostly a single label per webpage. However, multiple topics are often relevant for a single page. Thus, the model is penalised for possibly correct predictions during training.
+## 📚 Abstract
 
-2. The distribution of topic labels is imbalanced, e.g. Kids & Teens only accounts for ~1% of all pages. The downstream performance in these classes is generally lower.
+This study explores the use of Large Language Models (LLMs) for creating a fine-tuning dataset to improve Homepage2Vec, a state-of-the-art model for multilingual, multilabel website classification. Addressing the single-label bias in the Curlie dataset used for initial training, we assess various LLM-based labelers and select the best one through comparison to crowdsourced annotations. We generate two variants of a 10,000-website dataset, `curlie-gpt3.5-10k` and `curlie-gpt4-10k`, for fine-tuning Homepage2Vec. Our contributions encompass demonstrating the effectiveness of LLMs in obtaining high-quality annotations, enhancing Homepage2vec's Macro F1 from 38% to 42% through fine-tuning, and, finally, publicly releasing both LLM-annotated datasets.
 
-This yields the following research questions:
+## 🔗 Shortcuts
 
-We hypothesise that fine-tuning on a balanced, multi-labeled dataset improves multi-label performance, especially in the low-resource classes. To test this hypothesis, we aim to fine-tune the original Homepage2Vec model on the small existing crowd-sourced multi-labelled dataset in the first step. Next, we want to investigate if an LLM-generated or LLM-augmented fine-tuning dataset can reach similar dataset quality and can therefore be used as a replacement for the crowd-sourced fine-tuning dataset. If it proves a viable option, interesting follow-up research questions arise, like how scaling up the fine-tuning dataset affects the downstream performance.
+Here is a list of things that you likely want to do:
+
+* Find all project details in the full [report](report.pdf).
+* Inspect the experiments on [W&B](https://wandb.ai/ml-project-2-mlp/homepage2vec).
+* Download the LLM-annotated datasets `curlie-gpt3.5-10k` and `curlie-gpt4-10k` from [Zonodo]().
 
 ## 🔁 Reproducibility
 
 ### ⚙️ Environment Setup
-To reproduce all results, this notebook should be run with the correct **Python version** inside the specified **virtual environment** to use all packages with the correct version.
+
+To reproduce the results, you need to have the correct **Python version** inside the specified **virtual environment** to use all packages with the correct version.
 
 We use [Poetry](https://python-poetry.org/) for package management and versioning. This project was developed for Python `3.10.13` and Poetry `1.7`. We recommend installing Python via [pyenv](https://github.com/pyenv/pyenv) and Poetry via [pipx](https://pypa.github.io/pipx/).
 
@@ -49,31 +53,53 @@ Last but not the least, since we are using OpenAI's API, create a `.env` file in
 OPENAI_API_KEY=<your-api-key>
 ```
 
-Make sure that you have at least a few dollars so you do not run into any rate-limiting issues. From our experience, to label one of the provided websites on average costs around `$0.0001`. 
-
+Make sure that you have at least a few dollars so you do not run into any rate-limiting issues. From our experience, to label one of the provided websites on average costs around `$0.0001`.
 
 ### 🧪 Run the Experiments
 
-In our project, we define an experiment as a combination of a model, dataset and the labeler. We precisely define each of these parameters via [hydra](https?//hydra.cc/). The following table shows the available options for the parameters:
+In our project, we define an fine-tuning experiment as a combination of a dataset and labeler. We precisely define each of these parameters via [hydra](https?//hydra.cc/). The following table shows the available options for the parameters:
 
-| Parameter | Description                                             | Available Options                 |
-|-----------|---------------------------------------------------------|-----------------------------------|
-| data   | Dataset to be labeled and then finetuned on            | `original`, `ours`                    |
-| labeler   | Labeler you want to use for the dataset annotation | `human` (only available for `original` dataset), `gpt-labeler1`, `pt-labeler2`, `gpt-labeler3` |
+| Parameter | Description                                        | Available Options                                                                                                                    |
+| --------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| data      | Dataset to be labeled and then finetuned on        | `original`,  `curlie` (uses a random subsplit of 10,000 websites)                                                                    |
+| labeler   | Labeler you want to use for the dataset annotation | `human` (only available for `original` dataset), `gpt3.5-zeroshot-context1`, `gpt3.5-oneshot-context1`, ..., `gpt4-oneshot-context3` |
 
-To inspect more closely what hyper-parameters each of the options represent, you can look at the corresponding hydra config files: [model](conf/model/homepage2vec.yaml), [data](conf/data/) and [labeler](conf/labeler/). You can then either change the hyper-parameters directly in the
-configuration file or via command line. For instance, to change the learning rate of an optimiser, you can put as argument to the command
-`model.optimizer.lr=0.01`. Finally, here is an example of how to run an experiment:
+Here is an example of how to fine-tune Homepage2Vec using the labels generated by the labeler `gpt3.5-oneshot-context2` on the `curlie` dataset (subset of 10,000 websites):
 
 ```bash
-poetry run train data=original labeler=human
+poetry run train \
+    train_data=curlie \
+    train_labeler=gpt3.5-oneshot-context2 \
+    test_data=original \
+    test_labeler=human \
+    logger=none
 ```
 
-The command then executes the entire pipeline:
+*The details of the training, data splits, and more can be customised via the configuration files in the `conf` folder or dynamically via command line arguments. To print out a full list of the default configurations you can append the suffix `--cfg job` to the above command.*
 
-1. Given the URLs associated with the given dataset, scrape the HTML content of the websites and save it to a disk.
-2. Preprocess the HTML content and save it to a disk. Preprocessing extracts from the given URL and HTML content the following information: *top-level-domain*, *domain*, *title*, *description*, *metatags*, *keywords*, *links* and *text*. This step is neccessary for the labeler later on since this will determine the input context to the labeler.
-3. Embed HTML and URL content using the pretrained [multi-lingual sentence transformer model](https://huggingface.co/sentence-transformers/paraphrase-xlm-r-multilingual-v1). This step is needed for the Homepage2Vec model fine-tuning.
-4. Label the dataset using the given labeler. The labeler will use the preprocessed HTML content as input context and will then generate a label for each website. On a high level, we contruct a prompt that consist of the description of the labelling task including the possible 
-[categories](data/meta/categories.txt) as well as [example website](data/meta/example-website.json) and [example-output](data/meta/example-labels.json). Finally, we add to the prompt the preprocessed HTML content of the website. We vary the amount of context we provide to each labeler, therefore the naming `gpt-labeler1`, `gpt-labeler2` etc. The higher the number, the more context we provide to the labeler. Importantly, `gpt-labeler2` has all the context of the labeler `gpt-labeler1` and so on. The labeler will then make a multi-label prediction for each website. The labels are then saved to a disk.
-5. Finally, in the final step, we split the labeled dataset into a training and testing, fine-tune the Homepage2Vec model on the training set and evaluate the performance on the testing set. The results of the experiment with all hyper-parameters are then save to [wandb](https://wandb.ai/).
+The command triggers the following steps:
+
+1. Scrapes the HTML content of the URLs in `curlie` (uses 10,000 websites) and `original` datasets
+2. Preprocesses the HTML content, and extracts relevant features (e.g. title, description, keywords, etc.) 
+3. Embed the extracted features following the pipeline proposed in [Homepage2Vec](https://arxiv.org/abs/2008.11935) paper
+4. Label the datasets using the given labeler by providing information about the website (e.g. title, description, keywords, etc.) as input context and retrieve the relevant website topics.
+5. Fine-tune Homepage2Vec on the train dataset while validation and evaluating on splits from the test dataset.
+
+
+📣 **Important:** By default the repository only contains the raw URLs for a website corpus. Thus, running this script will first scrape, process and embed all the webpages for the dataset and then subsequently annotate it with the given labeler. For the `curlie` dataset, this will take a significant amount of time. To test reproducibility, you can download the entire compressed `data` folder from [Google Drive](). The folder contains all scraped, processed and embedded websites and the labels from all labelers considered in this study. Uncompress the folder and put it in the correct location and re-run the above command to run a fine-tuning run.
+
+Finally, we provide convenience bash scripts that exactly reproduce the experiments in the report. In the first phase, we aim to find the best labeler by re-annotating the `original` data with all GPT labelers. Run this script as follows:
+
+```bash
+./label.sh
+```
+
+The analysis of the results can be found in the notebook [eda.ipynb](notebooks/eda.ipynb).
+
+Finally, we fine-tune Homepage2Vec on the `curlie-10k` dataset with the two best labelers found in the previous step. Run this script as follows:
+
+```bash
+./finetune.sh
+```
+
+The analysis of the results can be found in the notebook [analysis.ipynb](notebooks/analysis.ipynb).
