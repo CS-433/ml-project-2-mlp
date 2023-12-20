@@ -1,92 +1,17 @@
-% File: icml2021.sty (LaTeX style file for ICML-2021, version of 2020-11-18)
-
-% This file contains the LaTeX formatting parameters for a two-column 
-% conference proceedings that is 8.5 inches wide by 11 inches high.  
-%
-% Modified by Iain Murray 2018: changed years, location. Remove affiliation notes when anonymous.
-%     Move times dependency from .tex to .sty so fewer people delete it.
-%
-% Modified by Daniel Roy 2017: changed byline to use footnotes for affiliations, and removed emails
-% 
-% Modified by Percy Liang 12/2/2013: changed the year, location from the previous template for ICML 2014
-
-% Modified by Fei Sha 9/2/2013: changed the year, location form the previous template for ICML 2013
-%
-% Modified by Fei Sha 4/24/2013: (1) remove the extra whitespace after the first author's email address (in %the camera-ready version) (2) change the Proceeding ... of ICML 2010 to 2014 so PDF's metadata will show up % correctly
-%
-% Modified by Sanjoy Dasgupta, 2013: changed years, location
-%
-% Modified by Francesco Figari, 2012: changed years, location
-%
-% Modified by Christoph Sawade and Tobias Scheffer, 2011: added line 
-% numbers, changed years
-%
-% Modified by Hal Daume III, 2010: changed years, added hyperlinks
-%
-% Modified by Kiri Wagstaff, 2009: changed years
-%
-% Modified by Sam Roweis, 2008: changed years
-%
-% Modified by Ricardo Silva, 2007: update of the ifpdf verification
-%
-% Modified by Prasad Tadepalli and Andrew Moore, merely changing years. 
-%
-% Modified by Kristian Kersting, 2005, based on Jennifer Dy's 2004 version
-% - running title. If the original title is to long or is breaking a line,
-%   use \icmltitlerunning{...} in the preamble to supply a shorter form.
-%   Added fancyhdr package to get a running head. 
-% - Updated to store the page size because pdflatex does compile the 
-%   page size into the pdf. 
-%
-% Hacked by Terran Lane, 2003:
-% - Updated to use LaTeX2e style file conventions (ProvidesPackage,
-%   etc.)
-% - Added an ``appearing in'' block at the base of the first column
-%   (thus keeping the ``appearing in'' note out of the bottom margin
-%   where the printer should strip in the page numbers).
-% - Added a package option [accepted] that selects between the ``Under
-%   review'' notice (default, when no option is specified) and the
-%   ``Appearing in'' notice (for use when the paper has been accepted
-%   and will appear).
-%
-%   Originally created as:  ml2k.sty (LaTeX style file for ICML-2000)
-%   by P. Langley (12/23/99)
-
-%%%%%%%%%%%%%%%%%%%%
-%% This version of the style file supports both a ``review'' version
-%% and a ``final/accepted'' version.  The difference is only in the
-%% text that appears in the note at the bottom of the first column of
-%% the first page.  The default behavior is to print a note to the
-%% effect that the paper is under review and don't distribute it.  The
-%% final/accepted version prints an ``Appearing in'' note.  To get the
-%% latter behavior, in the calling file change the ``usepackage'' line
-%% from:
-%%	\usepackage{icml2021}
-%% to
-%%	\usepackage[accepted]{icml2021}
-%%%%%%%%%%%%%%%%%%%%
-
+% Our adaption of the iclm2021.sty file
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{icml2021}[2020/11/18 v2.0 ICML Conference Style File]
-
-% Before 2018, \usepackage{times} was in the example TeX, but inevitably
-% not everybody did it.
-\RequirePackage{times}
+\ProvidesPackage{cs433}
 
 % Use fancyhdr package
+\RequirePackage{times}
 \RequirePackage{fancyhdr}
 \RequirePackage{color}
 \RequirePackage{algorithm}
 \RequirePackage{algorithmic}
-\RequirePackage{natbib}
-\RequirePackage{eso-pic} % used by \AddToShipoutPicture 
+\RequirePackage{eso-pic} 
 \RequirePackage{forloop}
 
-%%%%%%%% Options
-\DeclareOption{accepted}{%
-  \renewcommand{\Notice@String}{\ICML@appearing}
-  \gdef\isaccepted{1}
-}
+% Hyperref package setup of not specified
 \DeclareOption{nohyperref}{%
   \gdef\nohyperref{1}
 }
@@ -112,55 +37,14 @@
   \fi
 \fi\fi
 
-%%%%%%%%%%%%%%%%%%%%
-% This string is printed at the bottom of the page for the
-% final/accepted version of the ``appearing in'' note.  Modify it to
-% change that text.
-%%%%%%%%%%%%%%%%%%%%
-\newcommand{\ICML@appearing}{\textit{Proceedings of the
-$\mathit{38}^{th}$ International Conference on Machine Learning},
- PMLR 139, 2021.
-Copyright 2021 by the author(s).}
-
-%%%%%%%%%%%%%%%%%%%%
-% This string is printed at the bottom of the page for the draft/under
-% review version of the ``appearing in'' note.  Modify it to change
-% that text.
-%%%%%%%%%%%%%%%%%%%%
-\newcommand{\Notice@String}{Preliminary work.  Under review by the
-International Conference on Machine Learning (ICML)\@.  Do not distribute.}
 
 % Cause the declared options to actually be parsed and activated
 \ProcessOptions\relax
 
-% Uncomment the following for debugging.  It will cause LaTeX to dump
-% the version of the ``appearing in'' string that will actually appear
-% in the document.
-%\typeout{>> Notice string='\Notice@String'}
-
-% Change citation commands to be more like old ICML styles
-\newcommand{\yrcite}[1]{\citeyearpar{#1}}
-\renewcommand{\cite}[1]{\citep{#1}}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% to ensure the letter format is used. pdflatex does compile the
-% page size into the pdf. This is done using \pdfpagewidth and 
-% \pdfpageheight. As Latex does not know this directives, we first
-% check whether pdflatex or latex is used.
-%
-% Kristian Kersting 2005
-%
-% in order to account for the more recent use of pdfetex as the default
-% compiler, I have changed the pdf verification.
-%
-% Ricardo Silva 2007
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% Physical page layout 
 \paperwidth=8.5in
 \paperheight=11in
 
-% Physical page layout 
 \evensidemargin -0.19in  
 \oddsidemargin -0.22in 
 \setlength\textheight{9.0in}
@@ -171,76 +55,10 @@ International Conference on Machine Learning (ICML)\@.  Do not distribute.}
 \addtolength{\topmargin}{-20pt}
 \addtolength{\topmargin}{-0.29in}
 
-
-%% The following is adapted from code in the acmconf.sty conference
-%% style file.  The constants in it are somewhat magical, and appear
-%% to work well with the two-column format on US letter paper that
-%% ICML uses, but will break if you change that layout, or if you use
-%% a longer block of text for the copyright notice string.  Fiddle with
-%% them if necessary to get the block to fit/look right.
-%%
-%% -- Terran Lane, 2003
-%%
-%% The following comments are included verbatim from acmconf.sty:
-%%
-%%% This section (written by KBT) handles the 1" box in the lower left
-%%% corner of the left column of the first page by creating a picture,
-%%% and inserting the predefined string at the bottom (with a negative
-%%% displacement to offset the space allocated for a non-existent
-%%% caption).
-%%%
-\def\ftype@copyrightbox{8}
-\def\@copyrightspace{
-% Create a float object positioned at the bottom of the column.  Note
-% that because of the mystical nature of floats, this has to be called
-% before the first column is populated with text (e.g., from the title
-% or abstract blocks).  Otherwise, the text will force the float to
-% the next column.  -- TDRL.
-\@float{copyrightbox}[b]
-\begin{center}
-\setlength{\unitlength}{1pc}
-\begin{picture}(20,1.5)
-% Create a line separating the main text from the note block.
-% 4.818pc==0.8in.
-\put(0,2.5){\line(1,0){4.818}}
-% Insert the text string itself.  Note that the string has to be
-% enclosed in a parbox -- the \put call needs a box object to
-% position.  Without the parbox, the text gets splattered across the
-% bottom of the page semi-randomly.  The 19.75pc distance seems to be
-% the width of the column, though I can't find an appropriate distance
-% variable to substitute here.  -- TDRL.
-\put(0,0){\parbox[b]{19.75pc}{\small \Notice@String}}
-\end{picture}
-\end{center}
-\end@float}
-
-% Note: A few Latex versions need the next line instead of the former.
-% \addtolength{\topmargin}{0.3in}
-% \setlength\footheight{0pt}
+% Set the page layout
 \setlength\footskip{3.5pt} 
-% \pagestyle{empty} 
 \flushbottom \twocolumn
 \sloppy
-
-% Clear out the addcontentsline command
-\def\addcontentsline#1#2#3{}
- 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% commands for formatting paper title, author names, and addresses. 
-
-%%start%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%% title as running head -- Kristian Kersting 2005 %%%%%%%%%%%%%
-
-
-%\makeatletter
-%\newtoks\mytoksa
-%\newtoks\mytoksb
-%\newcommand\addtomylist[2]{%
-%  \mytoksa\expandafter{#1}%
-%  \mytoksb{#2}%
-%  \edef#1{\the\mytoksa\the\mytoksb}%
-%}
-%\makeatother 
 
 % box to check the size of the running head
 \newbox\titrun
@@ -250,13 +68,14 @@ International Conference on Machine Learning (ICML)\@.  Do not distribute.}
 \fancyhf{}
 \fancyhead{}
 \fancyfoot{}
+
 % set the width of the head rule to 1 point
 \renewcommand{\headrulewidth}{1pt}
 
 % definition to set the head as running head in the preamble
 \def\icmltitlerunning#1{\gdef\@icmltitlerunning{#1}}
 
-% main definition adapting \icmltitle from 2004
+% title
 \long\def\icmltitle#1{%
 
    %check whether @icmltitlerunning exists
@@ -314,6 +133,7 @@ International Conference on Machine Learning (ICML)\@.  Do not distribute.}
 }
 
 
+% authors
 \gdef\icmlfullauthorlist{}
 \newcommand\addstringtofullauthorlist{\g@addto@macro\icmlfullauthorlist}
 \newcommand\addtofullauthorlist[1]{%
@@ -418,29 +238,6 @@ International Conference on Machine Learning (ICML)\@.  Do not distribute.}
 
 \newcommand{\icmlEqualContribution}{\textsuperscript{*}Equal contribution }
 
-\newcounter{@affilnum}
-\newcommand{\printAffiliationsAndNotice}[1]{%
-\stepcounter{@affiliationcounter}%
-{\let\thefootnote\relax\footnotetext{\hspace*{-\footnotesep}\ifdefined\isaccepted #1\fi%
-\forloop{@affilnum}{1}{\value{@affilnum} < \value{@affiliationcounter}}{
-\textsuperscript{\arabic{@affilnum}}\ifcsname @affilname\the@affilnum\endcsname%
-\csname @affilname\the@affilnum\endcsname%
-\else
-{\bf AUTHORERR: Missing \textbackslash{}icmlaffiliation.}
-\fi
-}.
-\ifdefined\icmlcorrespondingauthor@text
-Correspondence to: \icmlcorrespondingauthor@text.
-\else
-{\bf AUTHORERR: Missing \textbackslash{}icmlcorrespondingauthor.}
-\fi
-
-\ \\
-\Notice@String
-}
-}
-}
-
 %\makeatother
 
 \long\def\icmladdress#1{%
@@ -462,9 +259,6 @@ Correspondence to: \icmlcorrespondingauthor@text.
     \hypersetup{pdfkeywords={#1}}
   \fi\fi
 }
-
-% modification to natbib citations
-\setcitestyle{authoryear,round,citesep={;},aysep={,},yysep={;}}
 
 % Redefinition of the abstract environment. 
 \renewenvironment{abstract}

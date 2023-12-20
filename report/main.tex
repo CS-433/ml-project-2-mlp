@@ -1,8 +1,13 @@
 \documentclass{article}
 
-\usepackage[accepted]{icml2021}
 
 % ---- Packages
+% Custom styling
+\usepackage{cs433}
+
+% Citation
+\usepackage[numbers,square,sort&compress]{natbib}
+
 % Hyperlinks
 \usepackage{hyperref}
 
@@ -20,34 +25,28 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
-\usepackage{hyperref}
+\definecolor{comments}{RGB}{152, 147, 165}
+\definecolor{backcolour}{RGB}{255, 250, 243}
+\definecolor{bordercolor}{RGB}{152, 147, 165}
+\definecolor{foam}{RGB}{86, 148, 159}
+\definecolor{pine}{RGB}{40, 105, 131}
+\definecolor{rose}{RGB}{215, 130, 126}
 
-\definecolor{codegreen}{rgb}{0,0.6,0}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{codepurple}{rgb}{0.58,0,0.82}
-\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
-
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},   
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2,
-    framesep=10pt,
-    xleftmargin=10pt,
-    xrightmargin=10pt
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\small,
+    commentstyle=\color{comments},
+    keywordstyle=\color{foam}, 
+    numbers=none,
+    captionpos=b,
+    frame=lines,
+    rulecolor=\color{bordercolor},
+    morestring=*[d]{"},
+    morestring=[s][]{\#\{}{\}},
+    stringstyle=\color{pine},
+    breaklines=true,
 }
-
-\lstset{style=mystyle}
+\lstset{style=codestyle}
 
 % Fonts
 \usepackage{fontspec}
@@ -69,26 +68,23 @@
 }
 
 \author{
-  Mika Senghaas, Peter Nutter, Ludek Cizinsky\\
+  Mika Senghaas, Peter Nutter, Ludek Cizinsky (\textit{name.surname@epfl.ch}) \\[0.5em]
   \textit{Ecole Polytechnique Federale de Lausanne (EPFL)}\\
 }
 \maketitle
-
 \input{sections/abstract}
 \input{sections/introduction}
 \input{sections/background}
 \input{sections/methods}
-
 \input{sections/results}
 \input{sections/summary}
 \input{sections/discussion}
 \input{sections/ethics}
-
 \newpage
-\bibliographystyle{icml2021}
+\bibliographystyle{plainnat}
 \bibliography{literature}
 
-
+\newpage
 \appendix
 
 \input{sections/appendix}
