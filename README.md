@@ -7,7 +7,7 @@ This project was developed in collaboration with the Data Science Lab ([DLab](ht
 
 ## 📚 Abstract
 
-This study explores the use of Large Language Models (LLMs) for creating a fine-tuning dataset to improve Homepage2Vec, a state-of-the-art model for multilingual, multilabel website classification. Addressing the single-label bias in the Curlie dataset used for initial training, we assess various LLM-based labelers and select the best one through comparison to crowdsourced annotations. We generate two variants of a 10,000-website dataset, `curlie-gpt3.5-10k` and `curlie-gpt4-10k`, for fine-tuning Homepage2Vec. Our contributions encompass demonstrating the effectiveness of LLMs in obtaining high-quality annotations, enhancing Homepage2vec's Macro F1 from 38% to 42% through fine-tuning, and, finally, publicly releasing both LLM-annotated datasets.
+Homepage2Vec, a state-of-the-art open-source model for multilingual, multilabel website classification, has proven powerful in accurately classifying website topics. However, it is limited by its initial training data, which on average only contains a single topic for a website. This study explores the use of Large Language Models (LLMs) for creating a high-quality fine-tuning dataset that more accurately reflects the topic diversity of a website. We assess various LLM-based labelers and select the best one through comparison to crowdsourced annotations. We generate two variants of a new 10,000-website dataset, `curlie-gpt3.5-10k` and `curlie-gpt4-10k`, for fine-tuning Homepage2Vec. We show that fine-tuning Homepage2Vec with these datasets improves its macro F1 from 38% to 42%. Finally, we release both LLM-annotated datasets publicly.
 
 ## 🔗 Shortcuts
 
