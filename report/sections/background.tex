@@ -8,6 +8,13 @@ The model is trained on the publicly available website directory called Curlie~\
 
 Architecturally, Homepage2Vec is an embeddings-based model utilising pre-trained textual extractors to process the various features of a website useful for topic classification. Specifically, the model scrapes a website's homepage, parses the raw HTML, and extracts the \texttt{tld}, \texttt{domain}, \texttt{metatags}, \texttt{title}, \texttt{description}, \texttt{keywords}, \texttt{links}, and \texttt{sentences} as features. With the exception of \texttt{tld} and \texttt{metatags}, which are one-hot encoded, all features are embedded via the multilingual model XLM-R~\cite{xmlr} and finally concatenated, resulting in a website embedding of dimension $4665$. The resulting embedding is then fed into a fully connected neural network with 2 hidden layers of sizes 1000 and 100, respectively, each followed by a ReLU activation function and dropout with a probability of $0.5$. Importantly, each output logit is a binary classifier for a single category, giving the model the ability to predict multiple labels for a single website by thresholding the output logits. 
 
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=0.2\textheight, width=\columnwidth]{./figures/training_overview.pdf}
+    \caption{\textbf{Training overview.} Sth else}
+    \label{fig:train-overview}
+\end{figure}
+
 Homepage2Vec, evaluated against an unbalanced Curlie test set, achieves a macro-averaged precision of 77.1\%, recall of 54.9\%, and an F1-score of 63.4\%~\cite{homepage2vec}. While these results are promising, they don't overestimate the model's performance as the test data also only contains single-labeled websites. We therefore evaluated the model on the \texttt{crowdsourced} dataset, where each website has an average of $2.5$ labels. We obtain a macro F1-score of $39.16\%$, serving as our baseline for further improvement using the proposed methods described in the following section.
 
 \textbf{LLM Labeling.} Previous studies have demonstrated that LLMs are capable of executing various tasks without being specifically trained for them~\textit{CITE}, especially when providing an informative prompt, a few examples, and a task description. This makes LLMs an attractive candidate to perform website classification directly by simply providing a set of features as input and ask the model to predict from a set of website categories.
