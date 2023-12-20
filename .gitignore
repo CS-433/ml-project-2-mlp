@@ -1,6 +1,5 @@
 # Custom
 .*_cache
-/models
 /outputs
 /logs
 /artifacts
