@@ -1,61 +1,39 @@
 \section{Methodology}\label{sec:methods}
-% Mention the overall goal of our work to keep the big picture in mind
-The overall goal of our work is to improve mutlilabel classification performance of the original homepage2vec model \cite{homepage2vec}. 
-We refer to this model as \texttt{baseline}. 
-We can divide our work into two main phases: (1) obtaining high-quality annotations and (2) fine-tuning the baseline model with the obtained annotations. 
-In the following, we describe the methodology for each phase in detail.
+\section{Methodology}
+\label{sec:methodology}
 
-\subsection* {Phase 1: Obtaining High-Quality Annotations}
-In the first phase, we aim to obtion hight-quality GPT annotations measuring performance against human annotatated data.
-The orignal human labaled data comprises of 840 websites, anotated each by 3 diffrent annotators. 
-The measured inter-anotator agreement measured by the pairwise Cohen's kappa \cite{cohen-coef} is $0.2 \pm 0.02$, indicating low agreement. 
-We assign a category label if at least 2 annotators agree, resulting in an average of $2.5$ labels per website.
+The overall goal of our work is to improve mutlilabel classification performance of the original Homepage2Vec model~\cite{homepage2vec}. We refer to this model as \texttt{baseline}. We can divide our work into two main phases: (1) identifying the best-performing LLM annotator and (2) fine-tuning the baseline model on a dataset annotated by the best-performing LLM annotator. In the following, we describe the methodology for each phase in detail.
+>>>>>>> 63cf3b8b9bd3594c4e0ef195f74338b7dbbd2a45
 
-For 761 websites that were reachable at the time of writing we scraped their content, extracting features such as top-level domain, domain, title, description, keywords, first 50 links, and first 100 sentences, the same features used in the original Homepage2vec model \cite{homepage2vec} and we used the same pipiline for feature embedding.
-Also not all features were available for all websites, as shown in Table \ref{tab:feature_information}.
-\input{tables/feature_information.tex}
+\subsection*{Phase 1: LLM Labeling}
 
-This scraped pre-prcessed data is then used to obtain the annotaions using Open-AI API.
-The system prompt tells the model to perform a mutlilabel classification (the full prompr can be found in the Appendix \ref{app:prompt}) and to respod in a JSON format with key value pairs representing the category and the binary classification. Additionaly one example can website with the correct label is provided to the model, making it a texttt{1-shot} classificaion.
-In the user promept we provided a JSON of the exctrated features, we considered 3 different contexts given to the model, accrding to features important found in the original paper \cite{homepage2vec}. 
-The smallest context \texttt{context1} includes the least amount of information about the website, making the classification faster and cheaper as less tokens are used and the \texttt{context3} having all the information about the website that was scraped.
+\input{tables/labeler-params.tex}
 
-We also considered two versions of the GPT model an older GPT-3.5 model and a newer GPT-4 model, where the GPT-4 model is more expensive and slower to use.
-All variants of the Labelers can be found in Tabel \ref{tab:labelers_setup}
-% - introduce labelers (parameter dimensions), introduce prompt, one shot example:
-\input{tables/labelers_setup.tex}
+% Labeler Setup (Variants)
+In the first phase, we aim to obtain high-quality LLM-generated annotations for the topics of a website. 
+In our study we only consider GPT labelers queried via the OpenAI API, mainly due to the convenience and the control over the response format. However, in theory our methodology can be applied to any LLM labeler. We consider a total of 12 GPT labelers by varying the model version, context, and whether we include an example annotation in the prompt. Table~\ref{tab:labeler-params} shows the parameters and decriptions of each variant. Each unique parameter combination makes up a unique labeler.
 
-\textbf{Curlie-10k} 
-We employ the best-performing GPT annotator evaluated against the human annotated original crowdsourced data to annotate \texttt{curlie-10k}, a dataset with 10k randomly selected websites from Curlie. 
-Following the same preprocessing and feature extraction as the original dataset, Table \ref{tab:feature_information} displays feature percentages across datasets. 
-As the figure clearly indicates, the most useful features according to the homepage2vec \cite{homepage2vec} descriptions and keywords are missing in around 55 \% and 75 \% of cases, respectively. 
+% Details about parameters and variants
+The context defines the amount of information about the website that is provided to the model in the system prompt and during the annotation process, and is inspired by the feature importance reported in the original Homepage2Vec paper~\cite{homepage2vec}. \texttt{context1} only uses information about the domain and meta-tags. \texttt{context2} adds the \texttt{title}, \texttt{description}, and \texttt{keywords}, and \texttt{context3} adds the first 100 sentences and 50 links. The example annotation provided if the few-shot flag is set is an annotation of the NY Times website, which was chosen because of the high number of labels that can be assigned to the website. The system prompt is kept constant across all labelers and is shown in Appendix~\ref{app:prompt}. The user prompt is a simple JSON dump of the context provided about the website to classify.
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=1\columnwidth]{figures/category_distribution.png}
-    \caption{Class distribution of the original dataset.}
-    \label{fig:class_distribution}
-\end{figure}
+% Gold standard
+To identify high-quality annotators, we use the dataset \texttt{crowdsourced} as our gold standard. The dataset was created by the authors of Homepage2Vec~\cite{homepage2vec} and contains 840 websites, each annotated by three human annotators. The measured inter-annotator agreement measured by the pairwise Cohen's kappa~\cite{cohen-coef} is $0.2 \pm 0.02$, indicating low agreement. We assign a category label if at least two annotators agree, resulting in an average of 2.5 labels per website.
 
-Figure \ref{fig:class_distribution} illustrates the class distribution of the original dataset. It is imbalanced, with most websites falling into the \textit{Business} category, followed by \textit{Arts} and \textit{Society}. This imbalance, identified in Homepage2vec, negatively impacted model performance on minority classes.
-% 1. Step: Show that we can create high-quality annotations (measured against human annotations)
-% - introduce curlie (talk about features (missing values), embedding, label list_ , re-scrape + process + embeddin
-% ---> All this is pretty much in data, so transfer it here
+% Evaluation
+We obtain labels from all labelers by manually scraping and preprocessing the websites defined in \texttt{crowdsourced}. The scraping and processing pipeline is kept identical to the one used in Homepage2Vec to allow for comparison of the GPT labelers to the \texttt{baseline}. However, some websites could not be reached at the time of writing, limiting the evaluation of all annotators to 761 websites.
 
+% Curlie-10k dataset
+Finally, we use the GPT-3.5 and GPT-4 annotators that finds the best trade-off between cost and quality to annotate a random subset of 10,000 websites from the Curlie website directory. We will refer to these datasets as \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} respectively. The datasets are used in the second phase of our study to fine-tune the baseline model.
 
-% 2. Step: Show that we can improve performance compared to pre-trained model via fine-tuning with GPT annotations
-% - training parameters (hparams, train/ test data splits)
-% - evaluation procedure (macro f1, …)
-% - calibration (?)
-% TODO: this
-\subsection* {Phase 2: Fine-Tuning the Baseline Model}
-In the second phase, we fine-tune the baseline model with the obtained annotations from the \texttt{curlie-10k} dataset. And using the crowdsourced data as the test and validation set with 0.7/0.3 split.
-We also perform a hyperparmeter search to find the best hyperparameters for the fine-tuning process. 
-For this we employ Baeysian TPE samplerer from Optuna \cite{optuna} to efectively search the hyperparam space. 
-The hyperparam values are detailed in Table \ref{tab:hyperparameters}.
+\subsection* {Phase 2: Knowledge Distillation}
+
+In the second phase, we aim to transfer the knowledge from the LLMs into Homepage2Vec via fine-tuning.
+
+% Training
+Training is performed on the \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} dataset for a maximum of 100 epochs. We use a 20\% held-out validation split from the \texttt{crowdsourced} dataset
+to monitor the validation F1 score and stop training if no improvement is observed for 20 epochs. This is to prevent overfitting the GPT labels. We perform extensive hyperparameter grid search to find the best hyperparameters using the Bayesian TPE sampler from Optuna~\cite{optuna} to effectively search the hyperparameter space. The hyperparameter values are detailed in Table~\ref{tab:hyperparameters}. The model which performs best on macro F1 in the validation split is chosen for the evaluation.
+
 \input{tables/hyperparameters.tex}
 
-The best performing model is chosen by performance on the validation set using the multi-label macro F1 score, which is the average of the F1 score of each class. 
-This model is then evaluated on the held out test set using macro F1, precision, recall, and accuracy.
-
-
+% Evaluation
+Finally, we evaluate the performance of the fine-tuned model on the held-out 70\% test set from the \texttt{crowdsourced} dataset in an unbalanced multi-label classification setting, focus on the macro F1 score to evaluate the overall performance of the model.

@@ -1,28 +1,29 @@
 \begin{table}[!ht]
 \centering
-\caption{\textbf{Labeler Statistics.}}
+\caption{\textbf{Labeler Statistics}}
 \label{tab:labeler-results}
-\begin{tabular}{llllrr}
+\begin{tabular}{lllccc}
 \toprule
- &  &  & LPP & Cost (\$) & M.-F1 (\%) \\
+ &  &  &  \textbf{LPP} & \textbf{Cost} & \textbf{M.-F1} \\
+\textbf{Model} & \textbf{Context} & \textbf{Shot} & ($\mu\pm\sigma$) & (\$) & (\%) \\
 \midrule
-\multirow[c]{6}{*}{GPT-3.5} & \multirow[c]{2}{*}{C1} & 0-shot & 0.39 ± 0.61 & 0.36 & 15.96 \\
+\multirow[c]{6}{*}{
+    \rotatebox[origin=c]{90}{GPT-3.5}
+    } & \multirow[c]{2}{*}{\texttt{context1}} & 0-shot & 0.39 ± 0.61 & \textbf{0.36} & 15.96 \\
  &  & 1-shot & 0.91 ± 0.95 & 0.48 & 23.26 \\
-\cline{2-6}
- & \multirow[c]{2}{*}{C2} & 0-shot & 1.39 ± 0.98 & 0.42 & 37.59 \\
+ & \multirow[c]{2}{*}{\texttt{context2}} & 0-shot & 1.39 ± 0.98 & 0.42 & 37.59 \\
  &  & 1-shot & 1.68 ± 1.15 & 0.63 & 38.69 \\
-\cline{2-6}
- & \multirow[c]{2}{*}{C3} & 0-shot & 1.57 ± 1.08 & 0.57 & 37.24 \\
+ & \multirow[c]{2}{*}{\texttt{context3}} & 0-shot & 1.57 ± 1.08 & 0.57 & 37.24 \\
  &  & 1-shot & 1.85 ± 1.24 & 0.80 & 37.70 \\
-\cline{1-6} \cline{2-6}
-\multirow[c]{5}{*}{GPT-4} & \multirow[c]{2}{*}{C1} & 0-shot & 1.50 ± 0.93 & 4.68 & 35.55 \\
+\midrule
+\multirow[c]{6}{*}{
+    \rotatebox[origin=c]{90}{GPT-4}
+    } & \multirow[c]{2}{*}{\texttt{context1}} & 0-shot & 1.50 ± 0.93 & 4.68 & 35.55 \\
  &  & 1-shot & 1.83 ± 1.36 & 5.75 & 36.10 \\
-\cline{2-6}
- & \multirow[c]{2}{*}{C2} & 0-shot & 2.16 ± 1.03 & 5.26 & 45.39 \\
+ & \multirow[c]{2}{*}{\texttt{context2}} & 0-shot & 2.16 ± 1.03 & 5.26 & 45.39 \\
  &  & 1-shot & 2.49 ± 1.28 & 7.25 & 45.93 \\
-\cline{2-6}
- & C3 & 1-shot & 2.80 ± 1.30 & 8.99 & 46.12 \\
-\cline{1-6} \cline{2-6}
+ & \multirow[c]{2}{*}{\texttt{context3}} & 0-shot & 2.30 ± 1.11 & 6.68 & 44.10 \\
+ &  & 1-shot & 2.80 ± 1.30 & 8.99 & \textbf{46.12} \\
 \bottomrule
 \end{tabular}
 \end{table}
