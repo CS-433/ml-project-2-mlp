@@ -844,3 +844,37 @@ def grid(
     # colorbar ticks
     cb.ax.set_xticklabels([f"{tick:.2f}" for tick in ticks], fontsize=22)
     return fig
+
+
+def merge_relabeled_chunks(dir_path: str) -> dict(str, dict):
+    """
+    Merges all relabeled files in a directory into one dictionary.
+
+    Args:
+        dir_path: Path to the directory containing the relabeled files.
+
+    Returns:
+        A dictionary containing the merged relabeled files.
+    """
+
+    # Get all files in directory
+    files = os.listdir(dir_path)
+
+    # Only keep the ones with the correct extension which is .json
+    files = [f for f in files if f.endswith(".json")]
+
+    # Load all files
+    data = []
+    for f in files:
+        with open(os.path.join(dir_path, f), "r") as f:
+            data.append(json.load(f))
+
+    # Merge all files
+    merged_dict = {
+        key: value
+        for dictionary in data
+        for key, value in dictionary.items()
+        if value["is_valid"]
+    }
+
+    return merged_dict
