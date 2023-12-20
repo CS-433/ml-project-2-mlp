@@ -102,6 +102,7 @@ class GPTLabeler(WebsiteLabeler):
         relabel: bool = True,
         model: str = "gpt-3.5-turbo",
         seed: int = 42,
+        missing_wids_path: str | None = None,
     ):
         """
         Loads the labels for a dataset that were generated from a labeler using the OpenAI API.
@@ -120,6 +121,7 @@ class GPTLabeler(WebsiteLabeler):
             relabel (bool): Whether to relabel the data. Defaults to True.
             model (str): Which model to use. Defaults to "gpt-3.5-turbo".
             seed (int): Seed for the API. Defaults to 42.
+            missing_wids_path (path) : path to the file containing the list of websites to label
         """
         super().__init__(name, data)
 
@@ -133,9 +135,14 @@ class GPTLabeler(WebsiteLabeler):
         self.relabel = relabel
         self.model = model
         self.seed = seed
+        self.missing_wids_path = missing_wids_path
+
+        # If label_missing, just load the labels, so we can relabel the invalid ones
+        if self.missing_wids_path is not None:
+            self.labels = self._load_labels()
 
         # Load the labels if they exist
-        if not relabel and os.path.exists(self.labels_path):
+        elif not relabel and os.path.exists(self.labels_path):
             self.labels = self._load_labels()
             return
 
@@ -172,10 +179,63 @@ class GPTLabeler(WebsiteLabeler):
 
         # Annotate websites
         websites = self.data.get_processed_data()
-        self.labels = self._label_websites(websites)
+
+        # If label_missing, only label the missing websites
+        if self.missing_wids_path is not None:
+            self._label_missing_websites(websites)
+        else:
+            self.labels = self._label_websites(websites)
 
         # Save the labels
         self._save_labels()
+
+    def _label_missing_websites(self, websites: dict) -> None:
+        """
+        Annotates the specified websites using the labeler and stores in a new file.
+        The save path of the new file is the same as the directory where the missing wids are stored.
+
+        Args:
+            websites (dict): Dictionary with all the websites.
+        """
+        # Load the missing wids to relabel
+        with open(self.missing_wids_path, "r") as f:
+            missing_wids = f.readlines()
+        missing_wids = [wid.strip() for wid in missing_wids]
+
+        for wid in tqdm(missing_wids):
+            try:
+                # Get the website
+                website = websites[int(wid)]
+
+                # Label the website
+                label = self._label_website(website)
+
+                # Update the labels
+                self.labels[wid] = label
+
+            except Exception as e:
+                print(e)
+                label = {
+                    "features": None,
+                    "labels": None,
+                    "is_valid": False,
+                    "reason_invalid": "API error",
+                    "duration": None,
+                    "prompt_tokens": None,
+                    "completion_tokens": None,
+                }
+                break
+
+        # Get the first and last wid
+        first, last = missing_wids[0], wid
+
+        # Get dir from the self.missing_wids_path
+        save_dir = os.path.dirname(self.missing_wids_path)
+        save_path = os.path.join(save_dir, f"relabeled-{first}-{last}.json")
+
+        # Save the labels
+        with open(save_path, "w") as f:
+            json.dump(self.labels, f)
 
     def _load_labels(self) -> dict:
         """
