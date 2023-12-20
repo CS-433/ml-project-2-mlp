@@ -846,7 +846,7 @@ def grid(
     return fig
 
 
-def merge_relabeled_chunks(dir_path: str) -> dict(str, dict):
+def merge_relabeled_chunks(dir_path: str) -> dict:
     """
     Merges all relabeled files in a directory into one dictionary.
 

@@ -16,6 +16,7 @@ data/labels/*
 !data/raw/
 !data/labels/human/
 !data/meta/
+!data/release
 
 **/mika*
 
