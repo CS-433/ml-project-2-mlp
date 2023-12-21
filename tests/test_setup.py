@@ -48,9 +48,9 @@ def test_check_local_imports():
     Checks that local imports can be resolved.
     """
     try:
-        import ml_project_2_mlp
+        from ml_project_2_mlp.utils import check_import
 
-        ml_project_2_mlp.utils.check_import()
+        check_import()
     except ModuleNotFoundError:
         err_msg = "The package could not be imported."
         raise ModuleNotFoundError(err_msg)
