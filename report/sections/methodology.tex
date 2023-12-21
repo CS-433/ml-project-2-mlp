@@ -1,6 +1,6 @@
 \section{Methodology}\label{sec:methodology}
 
-The overall goal of our work is to improve mutlilabel classification performance of the original Homepage2Vec model~\cite{homepage2vec}. We can divide our work into two main phases: (1) identifying the best-performing LLM annotator and (2) fine-tuning the baseline model on a dataset annotated by the best-performing LLM annotator. In the following, we describe the methodology for each phase in detail. We encourage refering to Figure~\ref{fig:train-overview} throughout this section for a high-level overview of our methodology.
+The overall goal of our work is to improve multilabel classification performance of the original Homepage2Vec model~\cite{homepage2vec}. We can divide our work into two main phases: (1) identifying the best-performing LLM annotator and (2) fine-tuning the baseline model on a dataset annotated by the best-performing LLM annotator. In the following, we describe the methodology for each phase in detail. We encourage refering to Figure~\ref{fig:train-overview} throughout this section for a high-level overview of our methodology.
 
 \subsection*{Phase 1: Identifying an Optimal LLM Labeler}
 
@@ -31,4 +31,4 @@ Training is performed on the \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-
 \input{tables/hyperparameters.tex}
 
 % Evaluation
-Finally, we evaluate the performance of the fine-tuned model on the held-out 70\% test set from the \texttt{crowdsourced} dataset in an unbalanced multi-label classification setting, focus on the macro F1 score to evaluate the overall performance of the model.
+Finally, we evaluate the performance of the fine-tuned model on the held-out 70\% test set from the \texttt{crowdsourced} dataset in an unbalanced multilabel classification setting, focus on the macro F1 score to evaluate the overall performance of the model.
