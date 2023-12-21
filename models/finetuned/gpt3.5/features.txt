@@ -1,0 +1,8 @@
+f_tld 27
+f_url 768
+f_metatags 30
+f_title 768
+f_description 768
+f_keywords 768
+f_links_50 768
+f_text_100 768
