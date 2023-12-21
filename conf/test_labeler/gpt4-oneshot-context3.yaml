@@ -1,0 +1,7 @@
+defaults:
+  - gpt-base
+  - model: gpt4
+  - shot: oneshot
+  - context: context3
+
+name: gpt4-oneshot-context3

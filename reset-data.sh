@@ -1,7 +1,7 @@
 #!/bin/bash
 : '
 Delete all processed data and labels of all labelers
-for a specified dataset (e.g. "original", "ours")
+for a specified dataset (e.g. "crowdsourced", "curlie")
 '
 
 dataset=$1

@@ -7,6 +7,9 @@ num_keywords: 50
 num_links: 50
 num_tags: 10
 
+# Whether to label missing
+missing_wids_path: null
+
 # Whether to define the categories
 define_categories: false
 

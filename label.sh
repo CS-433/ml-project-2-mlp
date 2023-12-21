@@ -1,6 +1,6 @@
 #!/bin/bash
 : '
-Label the entire `original` (crowdsourced) dataset with all
+Label the entire `crowdsourced` dataset with all
 GPT annotators.
 '
 
@@ -21,5 +21,5 @@ labelers=(
 
 for labeler in "${labelers[@]}"
 do
-    poetry run label data=original labeler=$labeler
+    poetry run label data=crowdsourced labeler=$labeler
 done
