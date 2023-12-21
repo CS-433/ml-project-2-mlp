@@ -1,4 +1,19 @@
 \section{Appendix}
+% -------- Ethical considerations
+\subsection{Ethical Considerations}\label{appendix:ethical-considerations}
+This study employs the Curlie dataset, managed by dedicated volunteers and moderators ensuring its content remains legal and free from marketing schemes. 
+To further support these efforts, we are releasing the re-labeled datasets \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} to the public.
+
+Additionally, we employed the \texttt{crowdsourced} dataset, originally created by Amazon Mechanical Turk workers for the homepage2vec paper \cite{homepage2vec}. 
+These workers were compensated in accordance with ethical standards and minimum wage requirements set by the Fair Work platform \cite{ethics2}.
+
+The use of LLMs for annotation, while efficient, raises concerns regarding the economic impact on human annotators who depend on such tasks for their livelihood. 
+It is imperative to ensure that this process supplements, rather than replaces, human annotators. In this context, providing platforms like Dynamo \cite{ethics1} for Amazon Mechanical Turk workers to communicate and organize is crucial.
+Additionally, it is crirical to maintain these principles and be cautious of influences from large entities that may hinder the efforts of workers to organize and advocate for their rights.
+
+Moreover, the extensive datasets training LLMs may contain biases, potentially influencing the labeling process and perpetuating stereotypes or inequalities. 
+It's essential to address these biases to maintain fairness and uphold ethical standards in automated systems.
+
 
 % -------- System prompt
 \subsection{System Prompt}\label{app:system-prompt}
@@ -62,20 +77,3 @@ of models as detailed below.
     ...
 }
 \end{lstlisting}
-
-
-% -------- Ethical considerations
-\subsection{Ethical Considerations}\label{appendix:ethical-considerations}
-This study employs the Curlie dataset, managed by dedicated volunteers and moderators ensuring its content remains legal and free from marketing schemes. 
-To further support these efforts, we are releasing the re-labeled datasets \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} to the public.
-
-Additionally, we employed the \texttt{crowdsourced} dataset, originally created by Amazon Mechanical Turk workers for the homepage2vec paper \cite{homepage2vec}. 
-These workers were compensated in accordance with ethical standards and minimum wage requirements set by the Fair Work platform \cite{ethics2}.
-
-
-The use of LLMs for annotation, while efficient, raises concerns regarding the economic impact on human annotators who depend on such tasks for their livelihood. 
-It is imperative to ensure that this process supplements, rather than replaces, human annotators. In this context, providing platforms like Dynamo \cite{ethics1} for Amazon Mechanical Turk workers to communicate and organize is crucial.
-Additionally, it is crirical to maintain these principles and be cautious of influences from large entities that may hinder the efforts of workers to organize and advocate for their rights.
-
-Moreover, the extensive datasets training LLMs may contain biases, potentially influencing the labeling process and perpetuating stereotypes or inequalities. 
-It's essential to address these biases to maintain fairness and uphold ethical standards in automated systems.
