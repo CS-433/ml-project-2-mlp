@@ -1,6 +1,6 @@
 # 🌐 Advancing Homepage2Vec with LLM-Generated Datasets for Multilingual Website Classification
 
-This project was developed in collaboration with the Data Science Lab ([DLab](https://dlab.epfl.ch/)) at EPFL as part of the [Machine Learning](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/) (CS-433) course. We thank [Prof. Robert West](https://robertwest.ch/) for enabling the project and [Tiziano Piccardi](https://tizianopiccardi.github.io/) for his guidance and support throughout the project.
+This project was developed in collaboration with the Data Science Lab ([DLab](https://dlab.epfl.ch/)) at EPFL as part of the [Machine Learning](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/) (CS-433) course. We thank [Prof. Robert West](https://people.epfl.ch/robert.west) for enabling the project and [Tiziano Piccardi](https://tizianopiccardi.github.io/) for his guidance and support throughout the project.
 
 ![Training Overview](report/figures/training-overview.png)
 
