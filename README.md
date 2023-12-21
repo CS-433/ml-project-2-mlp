@@ -95,7 +95,7 @@ The command triggers the following steps:
 
 1. Scrapes the HTML content of the URLs in `curlie` (uses 10,000 websites) and `crowdsourced` datasets
 2. Preprocesses the HTML content, and extracts relevant features (e.g. title, description, keywords, etc.) 
-3. Embed the extracted features following the pipeline proposed in [Homepage2Vec](https://arxiv.org/abs/2008.11935) paper
+3. Embed the extracted features following the pipeline proposed in Homepage2Vec paper
 4. Label the datasets using the given labeler by providing information about the website (e.g. title, description, keywords, etc.) as input context and retrieve the relevant website topics.
 5. Finetune Homepage2Vec on the train dataset while validation and evaluating on splits from the test dataset.
 
