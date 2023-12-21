@@ -53,10 +53,16 @@ The best balance was achieved using \texttt{context2}; the GPT-3.5 labeler emplo
 
 \subsection*{Phase 2: Transferring Knowledge via Finetuning}
 
-% TODO: Include best hyperparameters
-% TODO: Update the table and figure 3
+% GPT-3.5: 
+% LR/ Weight Decay / Scheduler Factor/ Batch Size
+% 0.000016	0.064037	0.376673	64
+% 1.6e-05 / 6.40e-02 / 3.77e-01 / 64
 
-Table~\ref{tab:finetune-results} shows the results of the finetuning experiments. We observe that both models increase the recall from 39.4\% to 47.6\% and 49.1\% when finetuned on GPT-3.5 and GPT-4 labels, respectively. However, this comes at cost of a minor decreases in precision. Overall, the macro F1 score increases from 39.2\% to 42.6\% and 42.8\% - an improvement of 3.4 and 3.6 percentage points, respectively.
+% GPT 4:
+% 0.001535	0.000252	0.460896	64
+% 1.5e-03 / 2.52e-04 / 4.61e-01 / 64
+
+Table~\ref{tab:finetune-results} shows the results of the finetuning experiments. We report only the results for the model with the hyperparameter configuration with the best validation macro F1 score. The best hyperparameters are listed in the Appendix~\ref{app:hyperparameters} section. We observe that both models increase the recall from 39.4\% to 51.1\% and 46.4\% when finetuned on GPT-3.5 and GPT-4 labels, respectively. Overall, the macro F1 score increases from 39.2\% to 43.5\% and 43.1\% - an improvement of 4.3 and 3.9 percentage points, respectively.
 This improvement shows that we were able to transfer the superior labeling capabilities of the LLM to Homepage2Vec. Figure~\ref{fig:finetune-results} shows that the increase in macro F1 score is achieved consistently acrosss the classes, with 12 out of the 14 classes improving for both models.
 
 % 0.391610 = 39.2% (Pre-trained Homepage2Vec)
