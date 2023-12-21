@@ -15,7 +15,20 @@ Here is a list of things that you likely want to do:
 
 * Find all project details in the full [report](report.pdf).
 * Inspect the experiments on [W&B](https://wandb.ai/ml-project-2-mlp/homepage2vec).
-* Download the LLM-annotated datasets `curlie-gpt3.5-10k` and `curlie-gpt4-10k` from [Zenodo](https://doi.org/10.5281/zenodo.10413068).
+* Download the LLM-annotated datasets `curlie-gpt3.5-10k` and `curlie-gpt4-10k` from [Zenodo](https://doi.org/10.5281/zenodo.10413068). If you want to use it for your research, please cite it as follows:
+
+```bibtex
+@dataset{curlie-gpt-10k,
+    author       = {Nutter, P. and Senghaas, M. and Cizinsky, L.},
+    title        = {Curlie Enhanced with LLM Annotations: Two Datasets for Advancing Homepage2Vec's Multilingual Website Classification},
+    year         = 2023,
+    version      = {1.0.0},
+    publisher    = {Zenodo},
+    doi          = {10.5281/zenodo.10413068},
+    url          = {https://doi.org/10.5281/zenodo.10413068}
+}
+```
+<!-- if you wanna cite it in your work -->
 
 ## 🔁 Reproducibility
 
