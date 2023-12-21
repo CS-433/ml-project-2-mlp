@@ -1,6 +1,6 @@
 \section{Methodology}\label{sec:methodology}
 
-The overall goal of our work is to improve multilabel classification performance of the original Homepage2Vec model~\cite{homepage2vec}. We can divide our work into two main phases: (1) identifying the best-performing LLM annotator and (2) fine-tuning the baseline model on a dataset annotated by the best-performing LLM annotator. In the following, we describe the methodology for each phase in detail. We encourage refering to Figure~\ref{fig:train-overview} throughout this section for a high-level overview of our methodology.
+The overall goal of our work is to improve multilabel classification performance of the original Homepage2Vec model~\cite{homepage2vec}. We can divide our work into two main phases: (1) identifying the best-performing LLM annotator and (2) finetuning the baseline model on a dataset annotated by the best-performing LLM annotator. In the following, we describe the methodology for each phase in detail. We encourage refering to Figure~\ref{fig:train-overview} throughout this section for a high-level overview of our methodology.
 
 \subsection*{Phase 1: Identifying an Optimal LLM Labeler}
 
@@ -19,11 +19,11 @@ We obtain labels from all labelers by manually scraping, preprocessing the websi
 To identify high-quality annotations, we use the dataset \texttt{crowdsourced} as our ground truth by computing the macro F1 score between the labels obtained from the GPT labelers and the labels provided by the human annotators. For the human annotations, we assign a category label if at least two of the threee annotators agree, resulting in an average of 2.5 labels per website. This majority vote is necessary, because we found that annotators disagreed on numerous occasions, as measured by an inter-annotator agreement of 0.2.
 
 % Curlie-10k dataset
-Finally, we plan to use the GPT-3.5 and GPT-4 annotator that finds the best trade-off between cost and quality to label a random subset of 10,000 websites from the Curlie website directory. We will refer to these datasets as \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} respectively. The datasets are used in the second phase of our study to fine-tune the baseline model.
+Finally, we plan to use the GPT-3.5 and GPT-4 annotator that finds the best trade-off between cost and quality to label a random subset of 10,000 websites from the Curlie website directory. We will refer to these datasets as \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} respectively. The datasets are used in the second phase of our study to finetune the baseline model.
 
 \subsection*{Phase 2: Transferring Knowledge via Finetuning}
 
-The goal of phase 2 is to enrich Homepage2Vec by fine-tuning it on the labels obtained in Phase 1.
+The goal of phase 2 is to enrich Homepage2Vec by finetuning it on the labels obtained in Phase 1.
 
 % Training
 Training is performed on the \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} dataset for a maximum of 100 epochs. We use a 30\% held-out validation split from the \texttt{crowdsourced} dataset to monitor the validation F1 score and stop training if no improvement is observed for 20 epochs. This is to prevent overfitting the LLM labels. We perform hyperparameter grid search to Bayesian TPE sampler from Optuna~\cite{optuna} for $\eta=20$ trials and $\tau=5$ startup trials to effectively search the hyperparameter space. The hyperparameter values are detailed in Table~\ref{tab:hyperparameters}. The model which performs best on macro F1 in the validation split is chosen for the evaluation.
@@ -31,4 +31,4 @@ Training is performed on the \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-
 \input{tables/hyperparameters.tex}
 
 % Evaluation
-Finally, we evaluate the performance of the fine-tuned model on the held-out 70\% test set from the \texttt{crowdsourced} dataset in an unbalanced multilabel classification setting, focus on the macro F1 score to evaluate the overall performance of the model.
+Finally, we evaluate the performance of the finetuned model on the held-out 70\% test set from the \texttt{crowdsourced} dataset in an unbalanced multilabel classification setting, focus on the macro F1 score to evaluate the overall performance of the model.

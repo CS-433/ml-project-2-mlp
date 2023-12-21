@@ -1,7 +1,7 @@
 #!/bin/bash
 : '
 Computes the baseline performance of the pre-trained 
-Homepage2Vec model on the `original` (crowdsourced) dataset (80%) and fine-tunes Homepage2Vec given annotations from the GPT annotators.
+Homepage2Vec model on the `original` (crowdsourced) dataset (80%) and finetunes Homepage2Vec given annotations from the GPT annotators.
 '
 
 # Pretrained Performance

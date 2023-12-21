@@ -21,7 +21,7 @@ from .metrics import LabelsPerPage
 
 
 class Homepage2VecModule(LightningModule):
-    """`LightningModule` for fine-tuning Homepage2Vec."""
+    """`LightningModule` for finetuning Homepage2Vec."""
 
     def __init__(
         self,
