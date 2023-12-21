@@ -15,7 +15,7 @@ Here is a list of things that you likely want to do:
 
 * Find all project details in the full [report](report.pdf).
 * Inspect the experiments on [W&B](https://wandb.ai/ml-project-2-mlp/homepage2vec).
-* Download the LLM-annotated datasets `curlie-gpt3.5-10k` and `curlie-gpt4-10k` from [Zonodo]().
+* Download the LLM-annotated datasets `curlie-gpt3.5-10k` and `curlie-gpt4-10k` from [Zenodo](https://doi.org/10.5281/zenodo.10413068).
 
 ## 🔁 Reproducibility
 
