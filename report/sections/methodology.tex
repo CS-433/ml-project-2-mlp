@@ -27,6 +27,7 @@ The goal of phase 2 is to enrich Homepage2Vec by finetuning it on the labels obt
 
 % Training
 Training is performed on the \texttt{curlie-gpt3.5-10k} and \texttt{curlie-gpt4-10k} dataset for a maximum of 100 epochs. We use a 30\% held-out validation split from the \texttt{crowdsourced} dataset to monitor the validation F1 score and stop training if no improvement is observed for 10 epochs. This is to prevent overfitting the LLM labels. We perform hyperparameter grid search to Bayesian TPE sampler from Optuna~\cite{optuna} for $\eta=100$ trials and $\tau=10$ startup trials to effectively search the hyperparameter space. The hyperparameter values are detailed in Table~\ref{tab:hyperparameters}. The model which performs best on macro F1 in the validation split is chosen for the evaluation.
+The training loss, defined as the average binary cross-entropy over 14 classes, includes a reweighting factor to address class imbalance, based on the negative-to-positive sample ratio.
 
 \input{tables/hyperparameters.tex}
 
