@@ -6,14 +6,14 @@
 defaults:
   - override /train_data: curlie
   - override /train_labeler: ???
+  - override /logger: ???
   - override /search: optuna
-  - override /logger: wandb
 
 # W&B configs
-group: exp2
+group: exp2-3
 tags: [finetuned]
 
-# Train 100% curlie data, validate 30% of original, test 70% of original
+# Train 100% curlie data, validate 30% of crowdsourced, test 70% of crowdsourced
 train_datamodule:
   data_split: [1.0, 0, 0]
 

@@ -711,8 +711,8 @@ def access_website(url: str, timeout: int = 10):
         return None
 
 
-def aggregate(df, param_tuples, metric="mean"):
-    df_agg = df.groupby(param_tuples).agg({"macro_f1": [metric]}).unstack()
+def aggregate(df, param_tuples, metric="macro_f1", agg="mean"):
+    df_agg = df.groupby(param_tuples).agg({metric: [agg]}).unstack()
     df_agg.columns = df_agg.columns.droplevel([0, 1])
     return df_agg
 
@@ -755,7 +755,7 @@ def plot_heatmap_on_ax(
     return cax
 
 
-def calculate_vs(df_runs, params, metric="mean", vmin=None, vmax=None):
+def calculate_vs(df_runs, params, metric="macro_f1", agg="mean", vmin=None, vmax=None):
     if vmin is not None and vmax is not None:
         return vmin, vmax
 
@@ -764,7 +764,7 @@ def calculate_vs(df_runs, params, metric="mean", vmin=None, vmax=None):
         for param2 in params:
             if param1 == param2:
                 continue
-            df_agg = aggregate(df_runs, [param1, param2], metric)
+            df_agg = aggregate(df_runs, [param1, param2], metric, agg)
             values.extend(df_agg.values.flatten())
 
     vmin = min(values) if vmin is None else vmin
@@ -775,7 +775,8 @@ def calculate_vs(df_runs, params, metric="mean", vmin=None, vmax=None):
 def grid(
     df_runs,
     params,
-    metric="mean",
+    metric,
+    agg="mean",
     cmap="YlGn",
     vmin=None,
     vmax=None,
@@ -796,7 +797,7 @@ def grid(
             param1 = params[i]
             param2 = params[j]
             ax = axs[i, j - 1]
-            df_agg = aggregate(df_runs, [param1, param2], metric)
+            df_agg = aggregate(df_runs, [param1, param2], metric, agg)
             cax = plot_heatmap_on_ax(
                 axs[i][j - 1],
                 df_agg,

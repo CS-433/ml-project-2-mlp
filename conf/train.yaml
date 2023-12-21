@@ -5,7 +5,7 @@ defaults:
   - _self_
   - train_data: ???
   - train_labeler: ???
-  - test_data: original
+  - test_data: crowdsourced
   - test_labeler: human
   - train_datamodule: default
   - test_datamodule: default

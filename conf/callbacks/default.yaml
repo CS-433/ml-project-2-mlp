@@ -13,5 +13,5 @@ model_checkpoint:
 
 early_stopping:
   monitor: "val/f1"
-  patience: 20
+  patience: 10
   mode: "max"
