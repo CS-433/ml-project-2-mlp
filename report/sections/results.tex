@@ -2,7 +2,7 @@
 
 \begin{figure*}[h]
     \centering
-    \includegraphics[width=\textwidth]{./figures/finetune-results.pdf}
+    \includegraphics[width=1\textwidth]{./figures/finetune-results.pdf}
     \caption{\textbf{Finetune Results.} Class-wise F1 score for the pre-trained model and the finetuned model on te original crowdsourced data.}
     \label{fig:finetune-results}
 \end{figure*}
@@ -10,14 +10,10 @@
 
 \subsection*{Phase 1: Identifying an Optimal LLM Labeler}
 
-Table~\ref{tab:labeler-results} shows the results of re-labelling \texttt{crowdsourced} dataset. Our findings demonstrate that LLM labelers can provide \textit{consistent}, \textit{cost-effective}, and \textit{high-quality} annotations for the complex task of multilingual, multilabel website topic classification. 
-
-% Consistency
-Remarkably, not a single incorrect output was produced, underscoring the reliability the models in annotating websites.
-
+Table~\ref{tab:labeler-results} shows the results of re-labelling the \texttt{crowdsourced} dataset. Our findings demonstrate that LLM labelers can provide \textit{cost-effective}, and \textit{high-quality} annotations for the complex task of multilingual, multilabel website topic classification. 
 
 % Cost
-In terms of cost, the labeling of the \texttt{crowdsourced} corpus cost approximately \$130 per 1000 pages. Our approach, utilising GPT-3.5 and GPT-4 labelers, drastically reduces this cost to an average of \$0.54 and \$6.44, respectively, achieving a reduction by factors of 240x and 20x.
+The labeling cost for the \texttt{crowdsourced} corpus was around \$130 per 1,000 pages. By employing GPT-3.5 and GPT-4 labelers, we reduced the expense to merely \$0.54 and \$6.44 on average respectively, achieving cost reductions of 240x and 20x.
 
 % Calculations
 % Human annotator cost: 327 USD
@@ -34,22 +30,19 @@ In terms of cost, the labeling of the \texttt{crowdsourced} corpus cost approxim
 % GPT-3.5: 130 / 0.54 = 240x
 % GPT-4: 130 / 6.44 = 20x
 
-% Performance
-Performance-wise, the best labeler, GPT-4 with \texttt{context3} and \texttt{1-shot}, achieves a macro F1 score of 46\% compared to the human annotations on the same dataset. Thus, the GPT labelers are better website classifiers than the baseline Homepage2Vec model, which achieves a macro F1 score of 39\% on the same dataset. This improvement gives us reason to believe that Homepage2Vec can learn from knowledge of the LLM labelers - the goal of the second phase of our study.
+% Performance & Effect of Parameters
+The best labeler, GPT-4 with \texttt{context3} and \texttt{1-shot}, achieves a macro F1 score of 46\% compared to the human annotations on the same dataset. It is therefore a better website classifier than the baseline Homepage2Vec model, which achieves a macro F1 score of 39\% on the same dataset. This improvement gives us reason to believe that Homepage2Vec can learn from knowledge of the LLM labelers - the goal of the second phase of our study.
 
+We find that label quality improves with increased information (context and few-shot examples) and model complexity, as shown in Figure~\ref{fig:labelers-grid}. A notable enhancement in label quality occurs when upgrading from \texttt{context1} to \texttt{context2}, and from GPT-3.5 to GPT-4. However, adding sentences and links in \texttt{context3} yields only minor improvements. This implies that solely using the domain and meta-tags in \texttt{context1} is insufficient for accurate topic prediction. Moreover, except for GPT-3.5 in \texttt{context1}, few-shot examples have limited impact on most labelers, suggesting that the task is sufficiently clear from the system prompt and website context.
+
+The range of labels assigned by annotators spans from 0.4 to 2.8. Models are reluctant to assign multiple topics to websites when provided with limited context. However, as more website information becomes available, the number of labels increases, aligning the annotations more closely with those made by humans, who had full website access during their annotation.
 
 \input{tables/labeler-results.tex}
 
-% GPT labeler parameter grid
-\textbf{Labeler Parameter Grid.} Figure~\ref{fig:labelers-grid} visualises the effect of the labeler parameters on the annotation quality. As expected, we find that the quality of the labels increases with the amount of context provided and the complexity of the model used. Interestingly, the added features in \texttt{context3} (links and text) do not increase the annotation quality on average.
-
 
 % Cost-quality trade-of
-\textbf{Cost-Quality Trade-Off:} Our analysis reveals a positve trend between label quality and cost, attributable to the use of longer prompts or more sophisticated models. In the next phase, we aimed to select two labelers, one per model. In case of marginal improvements in label quality, we opted for the cheaper labeler. 
-The best balance was achieved using \texttt{context2}; the GPT-3.5 labeler employed \texttt{1-shot}, whereas the GPT-4 used \texttt{0-shot}.
-
-% Curlie-10k dataset
-\textbf{Curlie-10k Dataset.} The average number of topics assigned to a page by the GPT 3.5 labeler is \textbf{1.6} and \textbf{2.03} for the GPT-4 labeler, which is both significantly than \textbf{1.07} for the original Curlie dataset. Figure~\ref{fig:curlie-10k-dist} shows the distribution of the labels in the re-labelled dataset compared to the original. We can see that, as hoped, more topics are assigned to each page. Interesting differences in the GPT-3.5 and GPT-4 labelers visible: the GPT-4 labeler tends to assign more websites to the topics that are less frequent in the original dataset, such as \textit{References}, \textit{Kids \& Teens} and \textit{Games}, leading to a more balanced distribution of topics. Surprisingly, the category \textit{Recreation} is assigned to a disproportionally high number of websites by the GPT-4 labeler.
+\textbf{Curlie-10k Dataset.} Our analysis reveals a positve trend between label quality and cost, attributable to the use of longer prompts or more sophisticated models. In the next phase, we aimed to select two labelers, one per model. In case of marginal improvements in label quality, we opted for the cheaper labeler. 
+The best balance was achieved using \texttt{context2}; the GPT-3.5 labeler employed \texttt{1-shot}, whereas the GPT-4 used \texttt{0-shot}. The average number of topics assigned to a page by the GPT 3.5 labeler is \textbf{1.6} and \textbf{2.03} for the GPT-4 labeler, which is both significantly more than \textbf{1.07} for the original Curlie dataset. Figure~\ref{fig:curlie-10k-dist} shows the distribution of the labels in the re-labelled dataset compared to the original. We can see that, as hoped, more topics are assigned to each page. Interesting differences in the GPT-3.5 and GPT-4 labelers are visible: the GPT-4 labeler tends to assign more websites to the topics that are less frequent in the original dataset, such as \textit{References}, \textit{Kids \& Teens} and \textit{Games}, leading to a more balanced distribution of topics. Surprisingly, the category \textit{Recreation} is assigned to a disproportionally high number of websites by the GPT-4 labeler.
 
 \begin{figure}[!ht]
     \centering
@@ -60,10 +53,11 @@ The best balance was achieved using \texttt{context2}; the GPT-3.5 labeler emplo
 
 \subsection*{Phase 2: Transferring Knowledge via Finetuning}
 
-Table~\ref{tab:finetune-results} shows the results of the finetuning experiments. 
-We observe that the model increases the recall significantly from 39.4\% to 47.6\% and /49\% when finetuned on GPT-3.5 and GPT-4 labels, respectively.
-However, this comes at cost of a minor decreases in precision. Overall, the macro F1 score from increases from 39.2\% to 42.6\% and 42.8\% - an improvement of 3.4 and 3.6 percentage points, respectively.
-This improvement shows that we were able to transfer the superior labeling capabilities of the LLM to Homepage2Vec, by finetuning on LLM-generated labels. Figure~\ref{fig:finetune-results} shows that the increase in macro F1 score is achieved by consistently acrosss the classes, with 12 out of the 14 classes improving.
+% TODO: Include best hyperparameters
+% TODO: Update the table and figure 3
+
+Table~\ref{tab:finetune-results} shows the results of the finetuning experiments. We observe that both models increase the recall from 39.4\% to 47.6\% and 49.1\% when finetuned on GPT-3.5 and GPT-4 labels, respectively. However, this comes at cost of a minor decreases in precision. Overall, the macro F1 score increases from 39.2\% to 42.6\% and 42.8\% - an improvement of 3.4 and 3.6 percentage points, respectively.
+This improvement shows that we were able to transfer the superior labeling capabilities of the LLM to Homepage2Vec. Figure~\ref{fig:finetune-results} shows that the increase in macro F1 score is achieved consistently acrosss the classes, with 12 out of the 14 classes improving for both models.
 
 % 0.391610 = 39.2% (Pre-trained Homepage2Vec)
 % 0.426289 = 42.6% (GPT-3.5) (+3.4 percentage points)
