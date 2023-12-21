@@ -10,7 +10,7 @@ defaults:
   - override /search: optuna
 
 # W&B configs
-group: exp2
+group: exp2-3
 tags: [finetuned]
 
 # Train 100% curlie data, validate 30% of crowdsourced, test 70% of crowdsourced

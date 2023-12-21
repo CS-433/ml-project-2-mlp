@@ -27,14 +27,14 @@ hydra:
     direction: maximize
 
     # Total number of runs that will be executed
-    n_trials: 20
+    n_trials: 100
 
     # Choose Optuna hyperparameter sampler (bayesian (TPE), random search, grid sampler, ...)
     # https://optuna.readthedocs.io/en/stable/reference/samplers.html
     sampler:
       _target_: optuna.samplers.TPESampler
       seed: ${seed}
-      n_startup_trials: 5 # Number of random sampling runs before optimization starts
+      n_startup_trials: 20 # Number of random sampling runs before optimization starts
 
     # Define hyperparameter search space
     params:

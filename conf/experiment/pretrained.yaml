@@ -9,7 +9,7 @@ defaults:
   - override /logger: ???
 
 # W&B configs
-group: exp2
+group: exp2-3
 tags: [pretrained]
 
 # Use pre-trained weights
