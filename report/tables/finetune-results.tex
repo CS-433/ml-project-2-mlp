@@ -1,15 +1,15 @@
 \begin{table}[!ht]
 \centering
-\caption{\textbf{Finetuning Results.} The table shows the precision, recall, macro F1 and and labels per page when evaluated on \texttt{crowdsourced}. We show results for the pre-trained baseline, as well as both finetuned variants.}
+\caption{\textbf{Finetune Results.}}
 \label{tab:finetune-results}
 \begin{tabular}{lrrrr}
 \toprule
- & \textbf{Pr.} & \textbf{Re.} & \textbf{M.-F1} & \textbf{LPP} \\
- & (\%) & (\%) & (\%) & ($\mu$) \\
+ & Pr. & Re. & M.-F1 & LPP \\
+ & (\%) & (\%) & (\%) & ($\sigma$) \\
 \midrule
-Pretrained & \textbf{40.97} & 39.44 & 39.16 & 1.84 \\
-GPT-3.5 & 40.19 & 47.55 & 42.63 & 1.93 \\
-GPT-4 & 39.92 & \textbf{49.07} & \textbf{42.87} & \textbf{3.07} \\
+Pretrained & 40.97 & 39.44 & 39.16 & 2.36 \\
+GPT-3.5 & 39.16 & \textbf{51.14} & \textbf{43.49} & \textbf{3.33} \\
+GPT-4 & \textbf{42.00} & 46.42 & 43.13 & 2.80 \\
 \bottomrule
 \end{tabular}
 \end{table}

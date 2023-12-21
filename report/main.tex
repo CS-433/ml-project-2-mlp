@@ -56,7 +56,7 @@
     BoldItalicFont = {Times New Roman Bold Italic}
 ]
 
-\setlength{\parskip}{.5em}
+\setlength{\parskip}{.3em}
 
 % ---- Main document
 \begin{document}
@@ -78,20 +78,21 @@
 
 \begin{figure}[!h]
     \centering
-    \includegraphics[width=.8\columnwidth]{figures/labeler-grid.pdf}
+    \includegraphics[width=.6\columnwidth]{figures/labeler-grid.pdf}
     \caption{\textbf{Labeler Parameter Grid.} The Figure displays the mean macro F1 score for all unique parameter combinations of the LLM labelers. For example, the top-right cell shows the average macro F1 score for all labelers that use GPT-3.5 with \texttt{1-shot} across all contexts.}
     \label{fig:labelers-grid}
 \end{figure}
 
 \input{sections/results}
 
-\input{sections/discussion}
+\input{sections/limitations.tex}
 \input{sections/summary}
 
 \newpage
 \bibliographystyle{plainnat}
 \bibliography{literature}
 
+\newpage
 \appendix
 
 \input{sections/appendix}
